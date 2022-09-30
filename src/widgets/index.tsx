@@ -14,6 +14,11 @@ const PARTIAL_SLOT=OBJECTPWCODE+"slot"
 const USE_REF="REF"
 const USE_PORTAL="PORTAL"
 let refOrPortal=USE_REF
+
+const REWRITE_PW_CODE="Override"
+const PARTIAL_PW_CODE="Partial"
+
+
 async function onActivate(plugin: ReactRNPlugin) {
 
   await plugin.app.registerPowerup(
@@ -27,6 +32,7 @@ async function onActivate(plugin: ReactRNPlugin) {
       ]}
   );
 
+
   await plugin.app.registerPowerup(
     'PartialSlot',
     PARTIAL_SLOT,
@@ -38,7 +44,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   let OONTag=await plugin.powerup.getPowerupByCode(OBJECTPWCODE);
   //let rewriter=await plugin.powerup.getPowerupSlotByCode(OBJECTPWCODE,"rewrite");
   let combiner=await plugin.powerup.getPowerupSlotByCode(OBJECTPWCODE,"partial");
-
+  //let combiner=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
 
   // A command that toggles whether a rem is a 'partial' rem
   await plugin.app.registerCommand({
@@ -155,18 +161,18 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   const AddAutomateSlotLoader= (hostRem:string|Rem|undefined,slotPortal:Rem|undefined)=>{
 
-    plugin.app.toast("SlotLoader Ready!");
+    // plugin.app.toast("SlotLoader Ready!");
     const automateDetector=async (DetectorItself:any)=>
     {
       return async ()=>{
-        await plugin.app.toast("SlotLoader Start!")
+        // await plugin.app.toast("SlotLoader Start!")
         if(!hostRem)return;
         if(typeof hostRem==="string")
         {
           hostRem=await plugin.rem.findOne(hostRem);
         }
-        await plugin.app.toast("SlotLoader Effected:"+hostRem?.text.toString())
-        console.warn("SlotLoader Effected:"+hostRem)
+        // await plugin.app.toast("SlotLoader Effected:"+hostRem?.text.toString())
+        // console.warn("SlotLoader Effected:"+hostRem)
         let slots=await getValidPartialInPortal(hostRem);
         if(hostRem&&!slots)
         {
@@ -195,7 +201,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     const AutomateObNHandler=(HandlerItself:any)=>{
       return async ()=>{
 
-        await plugin.app.toast("Tagged Rem Triggered the Listener!")
+        // await plugin.app.toast("Tagged Rem Triggered the Listener!")
         let state=await r?.getPowerupProperty(OBJECTPWCODE,"extends");
 
         if(!state)
@@ -212,10 +218,10 @@ async function onActivate(plugin: ReactRNPlugin) {
             {
               for([targetId,target] of targets.entries())
               {
-                plugin.app.toast(target?.text.toString()||"[NULL CONTENT]");
+                // plugin.app.toast(target?.text.toString()||"[NULL CONTENT]");
                 if(!targetId||!target)continue
                 let slotPortal;
-                await plugin.app.toast("Target Found!");
+                // await plugin.app.toast("Target Found!");
                 //Add special portals being tagged with PowerUp to display the slots under the 'partial' rem
                 let slotPortals=(await getSlotPortal(target));
                 slotPortal=slotPortals.length? slotPortals[0]:undefined
