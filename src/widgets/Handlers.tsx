@@ -1,19 +1,22 @@
 import {
-  REWRITE_PW_CODE,
+
   PARTIAL_PW_CODE,
-  PARTIAL_SLOT,
-  yFork
+  PARTIAL_SLOT, POINTER_PW_CODE,
+  yFork,
 } from './index';
 import {
   ReactRNPlugin, RemType, RichTextInterface,
 } from '@remnote/plugin-sdk';
 
 import { AppEvents, Rem } from '@remnote/plugin-sdk';
+import { updateELRecord } from './EventListenerRecorder';
 
 const USE_REF="REF"
 const USE_PORTAL="PORTAL"
 let refOrPortal=USE_REF
-
+export interface JSObject {
+  [key: string]: any
+}
 
 
 
@@ -32,16 +35,13 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
   const addAutomateSlotPointer=(RefOfSlot:Rem)=>{
     const AutomateSlotPointer=(HandleItself:any)=>{
       return async ()=>{
-        if(!(await isValidPartialPointer(RefOfSlot)))
+        if(!(await isValidPartialPointer(RefOfSlot))||(!(await isValidPointerRem(RefOfSlot))))
         {
           plugin.event.removeListener(AppEvents.RemChanged,RefOfSlot._id,HandleItself)
           return;
         }
-        let pointTo=(await RefOfSlot.remsBeingReferenced())[0];
-        let pointFrom=await RefOfSlot.remsReferencingThis();
-        pointFrom.forEach((p)=>{
-          usePointer(RefOfSlot,p,pointTo)
-        })
+        await usePointerBatchFor(RefOfSlot);
+
       }
     }
 
@@ -85,7 +85,11 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
   const isValidPartialPointer=async (pointer:Rem)=>{
     let projectRem=await (await pointer.remsBeingReferenced())[0].getParentRem();
-    return (await projectRem?.hasPowerup(PARTIAL_PW_CODE))
+    return (await projectRem?.hasPowerup(PARTIAL_PW_CODE));
+  }
+
+  const isValidPointerRem=async (pointer:Rem)=>{
+    return await pointer.hasPowerup(POINTER_PW_CODE);
   }
 
   const getValidPartialInPortal=async (parentRem:Rem|undefined)=>{
@@ -118,6 +122,17 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
     }
   }
 
+  const usePointerBatchFor=async (remAsPointer:Rem)=>
+  {
+    let pointTo=(await remAsPointer.remsBeingReferenced())[0];
+    let pointFrom=await remAsPointer.remsReferencingThis();
+    pointFrom.forEach((p)=>{
+      usePointer(remAsPointer,p,pointTo)
+    })
+  }
+
+
+
   const addSlotsFromPartialPortal=async (hostRem:Rem|undefined,slotPortal:Rem|undefined)=>  {
     let slots=await slotPortal?.getPortalDirectlyIncludedRem();
     if(slots)
@@ -146,8 +161,8 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
   }
 
-  let partialHandle=async (r:any,PartialHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
-    let targets=await getInherited(r);
+  let partialHandle=async (remPartial:any,PartialHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
+    let targets=await getInherited(remPartial);
     let target:Rem|undefined,targetId:string|undefined;
     if(refOrPortal===USE_PORTAL)
     {
@@ -160,7 +175,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
         //Add special portals being tagged with PowerUp to display the slots under the 'partial' rem
         let slotPortals=(await getSlotPortal(target));
         slotPortal=slotPortals.length? slotPortals[0]:undefined
-        let children=await r?.getChildrenRem();
+        let children=await remPartial?.getChildrenRem();
         if(children&&slotPortal)
           for(let child of children)
           {
@@ -184,19 +199,20 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
           plugin.event.addListener(AppEvents.RemChanged, target._id, handle)
         }
       }
-      PartialHandlerRecord.prev.forEach((r,i,map)=>{
-        if(!PartialHandlerRecord.current.has(r))
-        {
-          plugin.event.removeListener(AppEvents.RemChanged,r,PartialHandlerRecord.prev.get(r))
-          map.delete(r);
-        }
-      })
+      updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle))
+      // PartialHandlerRecord.prev.forEach((remPartial,i,map)=>{
+      //   if(!PartialHandlerRecord.current.has(remPartial))
+      //   {
+      //     plugin.event.removeListener(AppEvents.RemChanged,remPartial,PartialHandlerRecord.prev.get(remPartial))
+      //     map.delete(remPartial);
+      //   }
+      // })
     }
     else if(refOrPortal===USE_REF)
     {
       for(target of targets.values())
       {
-        let children=await r?.getChildrenRem();
+        let children=await remPartial?.getChildrenRem();
         if(children&&(await children).length&&target)
           for(let child of children)
           {
@@ -228,30 +244,31 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
               plugin.event.addListener(AppEvents.RemChanged,newRem._id,handle)
             }
           }
-        PartialHandlerRecord.prev.forEach((value, key)=>{
-          if(!PartialHandlerRecord.current.has(key))
-          {
-            PartialHandlerRecord.prev.delete(key);
-          }
-        })
+        updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle));
+        // PartialHandlerRecord.prev.forEach((value, key)=>{
+        //   if(!PartialHandlerRecord.current.has(key))
+        //   {
+        //     PartialHandlerRecord.prev.delete(key);
+        //   }
+        // })
       }
     }
 
     PartialHandlerRecord.current= new Set();
   }
-  let rewriteHandle=async (r:any,RewriteHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
-    let targets=await getInherited(r);
+  const pointerHandle=async (remAsPointer:any,pointerHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
+    await usePointerBatchFor(remAsPointer);
 
-    let target:Rem|undefined,targetId:string|undefined;
-    for([targetId,target] of targets.entries())
-    {
-
-    }
   }
 
-
-  return {
-    PARTIAL_PW_CODE:partialHandle
+  let obj:JSObject={
+    // TS engine would be confused by the key:  plaintext or a variable name?
+    // U want it to be a variable name, but TS engine thinks it as plaintext like obj["POINTER_PW_CODE"]
+    // PARTIAL_PW_CODE:partialHandle,
+    // POINTER_PW_CODE:pointerHandle
   }
+  obj[PARTIAL_PW_CODE]=partialHandle;
+  obj[POINTER_PW_CODE]=pointerHandle;
+  return obj
 }
 

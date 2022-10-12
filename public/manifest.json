@@ -4,7 +4,12 @@
   "name": "Object Oriented Noting",
   "author": "0x00114514",
   "repoUrl": "https://github.com/00x0101101/RN_ObjectOrientedNoting",
-  "version": "1.0.2",
+  "version":
+  {
+    "major": 0,
+    "minor": 1,
+    "patch": 3
+  },
   "theme": [],
   "enableOnMobile": true,
   "description": "The implementation of some reserved words from OOP languages like Java and C#",

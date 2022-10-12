@@ -2,12 +2,14 @@ import {
   AppEvents,
   declareIndexPlugin,
   ReactRNPlugin,
-  Rem,
+  Rem, WidgetLocation,
 } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
 
 import {useHandlers} from './Handlers';
+import { insertSelectedKeyId, POPUP_Y_OFFSET, selectNextKeyId, selectPrevKeyId } from '../lib/constants';
+
 
 const OBJECT_PW_CODE="O_O_N"
 export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
@@ -15,6 +17,8 @@ export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
 
 export const REWRITE_PW_CODE:string="Override"
 export const PARTIAL_PW_CODE:string="Partial"
+export const POINTER_PW_CODE:string="Pointer"
+
 export   //Inspired by a Y combinator ^_^
 const yFork= (x:any)=>
 {
@@ -24,9 +28,43 @@ const yFork= (x:any)=>
 
 
 
+
 async function onActivate(plugin: ReactRNPlugin) {
 
   let handlers=useHandlers(plugin)
+
+
+
+  await plugin.app.registerWidget(
+    "cmd_OON_selection_popup",
+    WidgetLocation.FloatingWidget,
+    {
+      dimensions: { height: "auto", width: "300px" },
+    }
+  );
+
+
+  await plugin.settings.registerStringSetting({
+    id: selectNextKeyId,
+    title: "Select Next Shortcut",
+    defaultValue: "down",
+  });
+
+  await plugin.settings.registerStringSetting({
+    id: selectPrevKeyId,
+    title: "Select Previous Shortcut",
+    defaultValue: "up",
+  });
+
+  await plugin.settings.registerStringSetting({
+    id: insertSelectedKeyId,
+    title: "Insert Selected Shortcut",
+    defaultValue: "tab",
+  });
+
+
+
+
 
   await plugin.app.registerPowerup(
     'Partial',
@@ -50,36 +88,41 @@ async function onActivate(plugin: ReactRNPlugin) {
     }
   );
 
+  await plugin.app.registerPowerup('Pointer',
+    POINTER_PW_CODE,
+    "To make a reference to Rem to be a 'pointer' rem",
+    {slots:[]
+    })
+
+  const openOONOptionPanel = async () => {
+    const caret = await plugin.editor.getCaretPosition();
+    await plugin.window.openFloatingWidget(
+      "cmd_OON_selection_popup",
+      { top: caret ? caret.y + POPUP_Y_OFFSET : undefined, left: caret?.x }
+    );
+  };
+
+
 
   let combiner=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
-  let rewriter=await plugin.powerup.getPowerupByCode(REWRITE_PW_CODE);
+  let pointer=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
 
   // A command that toggles whether a rem is a 'partial' rem
   await plugin.app.registerCommand({
-    id: 'togglePartial',
-    name: 'TogglePartial',
-    keywords:'tgp',
+    id: 'startOON',
+    name: 'Object Oriented Noting',
+    keywords:'oon',
     action: async () => {
-      plugin.focus.getFocusedRem().then(async (focusedRem)=>{
-        let p=await focusedRem?.hasPowerup(PARTIAL_PW_CODE)
-        if(!p)
-        {
-            await focusedRem?.addPowerup(PARTIAL_PW_CODE)
-        }
-        else
-        {
-          focusedRem?.removePowerup(PARTIAL_PW_CODE)
-        }
-      })
+      openOONOptionPanel()
     },
-
   });
-  const AddAutomateObNHandler=async (r:Rem|undefined,ObjTagCode:string,handler:any)=>
+  const AddAutomateObNHandler=async (r:Rem|undefined,ObjTagCode:string)=>
   {
     let HandlerRecord={
       prev:new Map(),
       current:new Set()
     }
+    let handler=handlers[ObjTagCode];
     const AutomateObNHandler=(ThisActionItself:any)=>{
       return async ()=>{
         let state=r?.hasPowerup(ObjTagCode)
@@ -96,34 +139,34 @@ async function onActivate(plugin: ReactRNPlugin) {
     return yFork(AutomateObNHandler)
   }
 
-  //the process watching over all the rems tagged with "Object"
-  const ObjectNProcess= async (ObjPowerUpCode:string)=>{
+  //the process watching over all the rems tagged with power-up rems from OON
+  const getObjectNotingProcess= async (ObjPowerUpCode:string)=>{
     let ObjPowerUp=await plugin.powerup.getPowerupByCode(ObjPowerUpCode)
     let ListenerRecord={
       prev:new Map(),
       current:new Set()
     };
     return async ()=>{
-      let rs=await ObjPowerUp?.taggedRem();
-      if(rs&&(await rs).length)
+      let remsOONed=await ObjPowerUp?.taggedRem();
+      if(remsOONed&&(await remsOONed).length)
       {
-        for(let r of rs)
+        for(let taggedWithOON of remsOONed)
         {
-          if(!ListenerRecord.prev.has(r._id)&&ObjPowerUpCode in handlers)
+          if(!ListenerRecord.prev.has(taggedWithOON._id))
           {
-            let handle=await AddAutomateObNHandler(r,ObjPowerUpCode,Object.getOwnPropertyDescriptor(handlers,ObjPowerUpCode)?.value)
+            let handle=await AddAutomateObNHandler(taggedWithOON,ObjPowerUpCode)
             handle();
-            ListenerRecord.prev.set(r._id,handle);
-            plugin.event.addListener(AppEvents.RemChanged,r._id,handle)
+            ListenerRecord.prev.set(taggedWithOON._id,handle);
+            plugin.event.addListener(AppEvents.RemChanged,taggedWithOON._id,handle)
 
           }
-          ListenerRecord.current.add(r._id);
+          ListenerRecord.current.add(taggedWithOON._id);
         }
         ListenerRecord.prev.forEach((r,i,map)=>{
-          if(!ListenerRecord.current.has(r))
+          if(!ListenerRecord.current.has(i))
           {
-            plugin.event.removeListener(AppEvents.RemChanged,r,ListenerRecord.prev.get(r))
-            map.delete(r);
+            plugin.event.removeListener(AppEvents.RemChanged,i,r)
+            map.delete(i);
           }
 
         })
@@ -134,17 +177,18 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   if(combiner)
   {
-    let partialHandle=await ObjectNProcess(PARTIAL_PW_CODE);
+    let partialHandle=await getObjectNotingProcess(PARTIAL_PW_CODE);
     await partialHandle()
     plugin.event.addListener(AppEvents.RemChanged,combiner?._id,partialHandle)
   }
 
-  if(rewriter)
+  if(pointer)
   {
-    let rewriteHandle=await ObjectNProcess(REWRITE_PW_CODE);
-    await rewriteHandle()
-    plugin.event.addListener(AppEvents.RemChanged,combiner?._id,rewriteHandle)
+    let pointerHandle=await  getObjectNotingProcess(POINTER_PW_CODE);
+    await pointerHandle();
+    plugin.event.addListener(AppEvents.RemChanged,pointer?._id,pointerHandle);
   }
+
 }
 
 
