@@ -12,7 +12,7 @@ import {
   partialOption,
   pointerOption,
 
-} from '../lib/constants';
+} from './Handlers';
 import { JSObject, useHandlers } from './Handlers';
 
 

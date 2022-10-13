@@ -18,7 +18,9 @@ export interface JSObject {
   [key: string]: any
 }
 
-
+export const POPUP_Y_OFFSET = 25;
+export const partialOption="toggle partial"
+export const pointerOption="toggle pointer"
 
 export const useHandlers=(plugin:ReactRNPlugin)=>{
   const addPortal2=async (parentRem:Rem,portalContent:Rem[])=>{
