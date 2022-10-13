@@ -25,23 +25,24 @@ const yFork= (x:any)=>
   return x(x)
 }
 
+let lastOptionPopupID:string="";
+
 
 
 
 
 async function onActivate(plugin: ReactRNPlugin) {
-
   let handlers=useHandlers(plugin)
 
-
-
   await plugin.app.registerWidget(
-    "cmd_OON_selection_popup",
+    "sample_widget",
     WidgetLocation.FloatingWidget,
     {
       dimensions: { height: "auto", width: "300px" },
     }
   );
+
+
 
 
   await plugin.settings.registerStringSetting({
@@ -96,8 +97,8 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   const openOONOptionPanel = async () => {
     const caret = await plugin.editor.getCaretPosition();
-    await plugin.window.openFloatingWidget(
-      "cmd_OON_selection_popup",
+    lastOptionPopupID=await plugin.window.openFloatingWidget(
+      "sample_widget",
       { top: caret ? caret.y + POPUP_Y_OFFSET : undefined, left: caret?.x }
     );
   };
@@ -113,9 +114,18 @@ async function onActivate(plugin: ReactRNPlugin) {
     name: 'Object Oriented Noting',
     keywords:'oon',
     action: async () => {
-      openOONOptionPanel()
+      await plugin.app.toast("Act 3:S.H.I.T!")
+      await plugin.window.closeFloatingWidget(lastOptionPopupID);
+      openOONOptionPanel();
+
+
+      // lastOptionPopupID=await plugin.window.openFloatingWidget(
+      //   "sample_widget",
+      //   { top: 800 , left: 1000 }
+      // );
     },
   });
+
   const AddAutomateObNHandler=async (r:Rem|undefined,ObjTagCode:string)=>
   {
     let HandlerRecord={
@@ -189,6 +199,10 @@ async function onActivate(plugin: ReactRNPlugin) {
     plugin.event.addListener(AppEvents.RemChanged,pointer?._id,pointerHandle);
   }
 
+
+
+  await plugin.app.toast("Act 3:3 Freeze!")
+  // await openOONOptionPanel()
 }
 
 

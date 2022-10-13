@@ -3,12 +3,19 @@ import {
   RemRichTextEditor,
 } from '@remnote/plugin-sdk';
 import React from 'react';
+import clsx from 'clsx';
+import { partialOption, pointerOption } from '../lib/constants';
+import { JSObject } from './Handlers';
+import { PARTIAL_PW_CODE, POINTER_PW_CODE } from './index';
+
+
+
+const options=[partialOption,pointerOption]
+const optionsDict:JSObject={}
+optionsDict[partialOption]=PARTIAL_PW_CODE;
+optionsDict[pointerOption]=POINTER_PW_CODE;
 
 export const SampleWidget = () => {
-
-  // let name = useTracker(() => plugin.settings.getSetting<string>('name'));
-  // let likesPizza = useTracker(() => plugin.settings.getSetting<boolean>('pizza'));
-  // let favoriteNumber = useTracker(() => plugin.settings.getSetting<number>('favorite-number'));
 
   return (
     <div>
@@ -24,7 +31,6 @@ export const SampleWidget = () => {
 
       </div>
     </div>
-
   );
 };
 
