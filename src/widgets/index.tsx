@@ -2,13 +2,18 @@ import {
   AppEvents,
   declareIndexPlugin,
   ReactRNPlugin,
-  Rem, WidgetLocation,
+  Rem,
 } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
 
-import {useHandlers} from './Handlers';
-import { insertSelectedKeyId, POPUP_Y_OFFSET, selectNextKeyId, selectPrevKeyId } from '../lib/constants';
+
+import {
+  partialOption,
+  pointerOption,
+
+} from '../lib/constants';
+import { JSObject, useHandlers } from './Handlers';
 
 
 const OBJECT_PW_CODE="O_O_N"
@@ -19,52 +24,24 @@ export const REWRITE_PW_CODE:string="Override"
 export const PARTIAL_PW_CODE:string="Partial"
 export const POINTER_PW_CODE:string="Pointer"
 
+
+const options=[partialOption,pointerOption]
+const optionsDict:JSObject={}
+optionsDict[partialOption]=PARTIAL_PW_CODE;
+optionsDict[pointerOption]=POINTER_PW_CODE;
+
+
 export   //Inspired by a Y combinator ^_^
 const yFork= (x:any)=>
 {
   return x(x)
 }
 
-let lastOptionPopupID:string="";
-
-
 
 
 
 async function onActivate(plugin: ReactRNPlugin) {
   let handlers=useHandlers(plugin)
-
-  await plugin.app.registerWidget(
-    "sample_widget",
-    WidgetLocation.FloatingWidget,
-    {
-      dimensions: { height: "auto", width: "300px" },
-    }
-  );
-
-
-
-
-  await plugin.settings.registerStringSetting({
-    id: selectNextKeyId,
-    title: "Select Next Shortcut",
-    defaultValue: "down",
-  });
-
-  await plugin.settings.registerStringSetting({
-    id: selectPrevKeyId,
-    title: "Select Previous Shortcut",
-    defaultValue: "up",
-  });
-
-  await plugin.settings.registerStringSetting({
-    id: insertSelectedKeyId,
-    title: "Insert Selected Shortcut",
-    defaultValue: "tab",
-  });
-
-
-
 
 
   await plugin.app.registerPowerup(
@@ -95,13 +72,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     {slots:[]
     })
 
-  const openOONOptionPanel = async () => {
-    const caret = await plugin.editor.getCaretPosition();
-    lastOptionPopupID=await plugin.window.openFloatingWidget(
-      "sample_widget",
-      { top: caret ? caret.y + POPUP_Y_OFFSET : undefined, left: caret?.x }
-    );
-  };
+
 
 
 
@@ -111,18 +82,18 @@ async function onActivate(plugin: ReactRNPlugin) {
   // A command that toggles whether a rem is a 'partial' rem
   await plugin.app.registerCommand({
     id: 'startOON',
-    name: 'Object Oriented Noting',
+    name: 'Clear OON tags',
     keywords:'oon',
     action: async () => {
-      await plugin.app.toast("Act 3:S.H.I.T!")
-      await plugin.window.closeFloatingWidget(lastOptionPopupID);
-      openOONOptionPanel();
-
-
-      // lastOptionPopupID=await plugin.window.openFloatingWidget(
-      //   "sample_widget",
-      //   { top: 800 , left: 1000 }
-      // );
+      let hostRem=await plugin.focus.getFocusedRem();
+      for (let op in options)
+      {
+        let pw2Remove=optionsDict[op];
+        if(await hostRem?.hasPowerup(pw2Remove))
+        {
+          await hostRem?.removePowerup(pw2Remove)
+        }
+      }
     },
   });
 
@@ -162,6 +133,15 @@ async function onActivate(plugin: ReactRNPlugin) {
       {
         for(let taggedWithOON of remsOONed)
         {
+          for(let op of options)
+          {
+            let pw2Remove=optionsDict[op];
+            if(pw2Remove===ObjPowerUpCode)continue;
+            if(await taggedWithOON?.hasPowerup(pw2Remove))
+            {
+              await taggedWithOON?.removePowerup(pw2Remove)
+            }
+          }
           if(!ListenerRecord.prev.has(taggedWithOON._id))
           {
             let handle=await AddAutomateObNHandler(taggedWithOON,ObjPowerUpCode)
