@@ -2,7 +2,6 @@ import {
 
   PARTIAL_PW_CODE,
   PARTIAL_SLOT, POINTER_PW_CODE,
-  yFork,
 } from './index';
 import {
   ReactRNPlugin, RemType, RichTextInterface,
@@ -18,7 +17,6 @@ export interface JSObject {
   [key: string]: any
 }
 
-export const POPUP_Y_OFFSET = 25;
 export const partialOption="toggle partial"
 export const pointerOption="toggle pointer"
 
@@ -35,52 +33,45 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
   }
 
   const addAutomateSlotPointer=(RefOfSlot:Rem)=>{
-    const AutomateSlotPointer=(HandleItself:any)=>{
-      return async ()=>{
-        if(!(await isValidPartialPointer(RefOfSlot))||(!(await isValidPointerRem(RefOfSlot))))
-        {
-          plugin.event.removeListener(AppEvents.RemChanged,RefOfSlot._id,HandleItself)
-          return;
-        }
-        await usePointerBatchFor(RefOfSlot);
-
+    async function AutomateSlotPointer(){
+      if((!(await isValidPartialPointer(RefOfSlot)))&&(!(await isValidPointerRem(RefOfSlot))))
+      {
+        plugin.event.removeListener(AppEvents.RemChanged,RefOfSlot._id,AutomateSlotPointer)
+        return;
       }
+      await usePointerBatchFor(RefOfSlot);
     }
-
-    return yFork(AutomateSlotPointer)
+    return AutomateSlotPointer
   }
 
   const addAutomateSlotLoader= (hostRem:string|Rem|undefined,slotPortal:Rem|undefined)=>{
 
     // plugin.app.toast("SlotLoader Ready!");
-    const automateDetector=async (DetectorItself:any)=>
+    async function automateDetector()
     {
-      return async ()=>{
-        // await plugin.app.toast("SlotLoader Start!")
-        if(!hostRem)return;
-        if(typeof hostRem==="string")
+      // await plugin.app.toast("SlotLoader Start!")
+      if(!hostRem)return;
+      if(typeof hostRem==="string")
+      {
+        hostRem=await plugin.rem.findOne(hostRem);
+      }
+      // await plugin.app.toast("SlotLoader Effected:"+hostRem?.text.toString())
+      // console.warn("SlotLoader Effected:"+hostRem)
+      let slots=await getValidPartialInPortal(hostRem);
+      if(hostRem&&!slots)
+      {
+        plugin.event.removeListener(AppEvents.RemChanged,hostRem._id,automateDetector)
+      }
+      else if(hostRem)
+      {
+        for(let instanceRem of await hostRem.taggedRem())
         {
-          hostRem=await plugin.rem.findOne(hostRem);
-        }
-        // await plugin.app.toast("SlotLoader Effected:"+hostRem?.text.toString())
-        // console.warn("SlotLoader Effected:"+hostRem)
-        let slots=await getValidPartialInPortal(hostRem);
-        if(hostRem&&!slots)
-        {
-          plugin.event.removeListener(AppEvents.RemChanged,hostRem._id,DetectorItself)
-        }
-        else if(hostRem)
-        {
-          for(let instanceRem of await hostRem.taggedRem())
-          {
-            await addSlotsFromPartialPortal(instanceRem,slotPortal);
+          await addSlotsFromPartialPortal(instanceRem,slotPortal);
 
-          }
         }
-
       }
     }
-    return yFork(automateDetector);
+    return automateDetector;
   }
 
 
@@ -163,6 +154,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
   }
 
+  let remsReferencedAlready=new Set();
   let partialHandle=async (remPartial:any,PartialHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
     let targets=await getInherited(remPartial);
     let target:Rem|undefined,targetId:string|undefined;
@@ -196,7 +188,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
         PartialHandlerRecord.current.add(targetId);
         if(!PartialHandlerRecord.prev.has(targetId)) {
           let handle = await addAutomateSlotLoader(target, slotPortal)
-          handle();
+          await handle();
           PartialHandlerRecord.prev.set(targetId, handle)
           plugin.event.addListener(AppEvents.RemChanged, target._id, handle)
         }
@@ -214,37 +206,41 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
     {
       for(target of targets.values())
       {
-        let children=await remPartial?.getChildrenRem();
-        if(children&&(await children).length&&target)
-          for(let child of children)
+        let childrenRemPartial=await remPartial?.getChildrenRem();
+        if(childrenRemPartial&&(await childrenRemPartial).length&&target)
+          for(let child of childrenRemPartial)
           {
-            let referencedAlready=false;
-            let newRem;
+            //let remsReferencedAlready=false;
+            let newRem=undefined;
             for(let rr of await child.remsReferencingThis())
             {
               if(rr.parent===target?._id)
               {
-                referencedAlready=true;
+                // remsReferencedAlready.add(child._id);
                 newRem=rr;
+                PartialHandlerRecord.current.add(newRem?._id);
               }
             }
             if(!await child.isSlot())continue
 
-            if(!referencedAlready)
+            if(!newRem||!PartialHandlerRecord.current.has(newRem._id))
             {
+              PartialHandlerRecord.current.add(newRem?._id);
               newRem=await plugin.rem.createRem();
               await newRem?.setText(await plugin.richText.rem(child).value());
               await newRem?.setParent(target);
               await newRem?.setIsSlot(true);
+
             }
-            PartialHandlerRecord.current.add(newRem?._id);
+
             if(newRem&&!PartialHandlerRecord.prev.has(newRem?._id))
             {
-              let handle=await addAutomateSlotPointer(newRem)
-              handle();
+              let handle=addAutomateSlotPointer(newRem)
+              await handle();
               PartialHandlerRecord.prev.set(newRem._id,handle);
               plugin.event.addListener(AppEvents.RemChanged,newRem._id,handle)
             }
+            PartialHandlerRecord.current.add(newRem?._id);
           }
         updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle));
         // PartialHandlerRecord.prev.forEach((value, key)=>{

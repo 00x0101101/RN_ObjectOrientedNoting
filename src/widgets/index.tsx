@@ -31,11 +31,11 @@ optionsDict[partialOption]=PARTIAL_PW_CODE;
 optionsDict[pointerOption]=POINTER_PW_CODE;
 
 
-export   //Inspired by a Y combinator ^_^
-const yFork= (x:any)=>
-{
-  return x(x)
-}
+// export   //Inspired by a Y combinator ^_^
+// const yFork= (x:any)=>
+// {
+//   return x(x)
+// }
 
 
 
@@ -86,7 +86,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     keywords:'oon',
     action: async () => {
       let hostRem=await plugin.focus.getFocusedRem();
-      for (let op in options)
+      for (let op of options)
       {
         let pw2Remove=optionsDict[op];
         if(await hostRem?.hasPowerup(pw2Remove))
@@ -97,57 +97,54 @@ async function onActivate(plugin: ReactRNPlugin) {
     },
   });
 
-  const AddAutomateObNHandler=async (r:Rem|undefined,ObjTagCode:string)=>
+  const AddAutomateObNHandler= (r:Rem|undefined,ObjTagCode:string)=>
   {
     let HandlerRecord={
       prev:new Map(),
       current:new Set()
     }
     let handler=handlers[ObjTagCode];
-    const AutomateObNHandler=(ThisActionItself:any)=>{
-      return async ()=>{
-        let state=r?.hasPowerup(ObjTagCode)
-        if(!state)
-        {
-          plugin.event.removeListener(AppEvents.RemChanged,r?._id,ThisActionItself)
-        }
-        else
-        {
-          handler(r,HandlerRecord);
-        }
+    let AutomateObNHandler=async ()=>{
+      let state=r?.hasPowerup(ObjTagCode)
+      if(!state)
+      {
+        plugin.event.removeListener(AppEvents.RemChanged,r?._id,AutomateObNHandler)
       }
+      else
+      {
+        handler(r,HandlerRecord);
+      }
+
     }
-    return yFork(AutomateObNHandler)
+    return AutomateObNHandler
   }
 
-  //the process watching over all the rems tagged with power-up rems from OON
+  //the process will return a function in closure watching over all the rems tagged with power-up rems from OON
   const getObjectNotingProcess= async (ObjPowerUpCode:string)=>{
     let ObjPowerUp=await plugin.powerup.getPowerupByCode(ObjPowerUpCode)
     let ListenerRecord={
       prev:new Map(),
       current:new Set()
     };
+
+
+    //Triggered when Obj PowerUp has been changed(due to some rem has been tag with this),
+    //all changes to the rem tagged by the PowerUp whose code is "ObjPowerUpCode" will trigger the event listener
+    //the callback of the event listener can auto-terminate themselves after corresponding PowerUp tags were removed
     return async ()=>{
       let remsOONed=await ObjPowerUp?.taggedRem();
       if(remsOONed&&(await remsOONed).length)
       {
         for(let taggedWithOON of remsOONed)
         {
-          for(let op of options)
-          {
-            let pw2Remove=optionsDict[op];
-            if(pw2Remove===ObjPowerUpCode)continue;
-            if(await taggedWithOON?.hasPowerup(pw2Remove))
-            {
-              await taggedWithOON?.removePowerup(pw2Remove)
-            }
-          }
+
           if(!ListenerRecord.prev.has(taggedWithOON._id))
           {
-            let handle=await AddAutomateObNHandler(taggedWithOON,ObjPowerUpCode)
-            handle();
-            ListenerRecord.prev.set(taggedWithOON._id,handle);
+            let handle=AddAutomateObNHandler(taggedWithOON,ObjPowerUpCode)
+            await handle();
             plugin.event.addListener(AppEvents.RemChanged,taggedWithOON._id,handle)
+            ListenerRecord.prev.set(taggedWithOON._id,handle);
+
 
           }
           ListenerRecord.current.add(taggedWithOON._id);
@@ -169,6 +166,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   {
     let partialHandle=await getObjectNotingProcess(PARTIAL_PW_CODE);
     await partialHandle()
+    //Each time when the "Partial" PowerUp changed due to some rem use "Partial" PowerUp as a tag, the "partialHandle" was triggered
     plugin.event.addListener(AppEvents.RemChanged,combiner?._id,partialHandle)
   }
 
@@ -176,13 +174,11 @@ async function onActivate(plugin: ReactRNPlugin) {
   {
     let pointerHandle=await  getObjectNotingProcess(POINTER_PW_CODE);
     await pointerHandle();
+
     plugin.event.addListener(AppEvents.RemChanged,pointer?._id,pointerHandle);
   }
 
 
-
-  await plugin.app.toast("Act 3:3 Freeze!")
-  // await openOONOptionPanel()
 }
 
 
