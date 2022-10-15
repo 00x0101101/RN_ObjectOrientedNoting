@@ -21,7 +21,7 @@ export const partialOption="toggle partial"
 export const pointerOption="toggle pointer"
 
 export const useHandlers=(plugin:ReactRNPlugin)=>{
-  const addPortal2=async (parentRem:Rem,portalContent:Rem[])=>{
+  async function addPortal2 (parentRem:Rem,portalContent:Rem[]){
     let portal=await plugin.rem.createPortal();
     if(portal)
       portalContent.forEach(content=>{
@@ -77,7 +77,9 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
 
   const isValidPartialPointer=async (pointer:Rem)=>{
-    let projectRem=await (await pointer.remsBeingReferenced())[0].getParentRem();
+    let p=(await pointer.remsBeingReferenced())[0];
+    if(!p)return false;
+    let projectRem=await p.getParentRem();
     return (await projectRem?.hasPowerup(PARTIAL_PW_CODE));
   }
 
@@ -154,7 +156,9 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
   }
 
-  let remsReferencedAlready=new Set();
+  //Work as a lock to prevent dirty write to the database
+  const remsReferencedAlready=new Set();
+
   let partialHandle=async (remPartial:any,PartialHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
     let targets=await getInherited(remPartial);
     let target:Rem|undefined,targetId:string|undefined;
@@ -210,21 +214,24 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
         if(childrenRemPartial&&(await childrenRemPartial).length&&target)
           for(let child of childrenRemPartial)
           {
-            //let remsReferencedAlready=false;
             let newRem=undefined;
+            // let needs2unlock=false;
             for(let rr of await child.remsReferencingThis())
             {
               if(rr.parent===target?._id)
               {
-                // remsReferencedAlready.add(child._id);
                 newRem=rr;
                 PartialHandlerRecord.current.add(newRem?._id);
+                // New rem has been written to database correctly, clear the lock!
+                remsReferencedAlready.delete(child._id);
               }
             }
             if(!await child.isSlot())continue
 
-            if(!newRem||!PartialHandlerRecord.current.has(newRem._id))
+            if(!newRem&&!remsReferencedAlready.has(child._id))
             {
+              //add the lock when new rem beginning to create
+              remsReferencedAlready.add(child._id);
               PartialHandlerRecord.current.add(newRem?._id);
               newRem=await plugin.rem.createRem();
               await newRem?.setText(await plugin.richText.rem(child).value());

@@ -45,28 +45,28 @@ async function onActivate(plugin: ReactRNPlugin) {
 
 
   await plugin.app.registerPowerup(
-    'Partial',
+    '~Partial',
     PARTIAL_PW_CODE,
     "To Tag rems where the preserved word 'partial' effects",
     {slots:[]
       }
   );
 
-  await plugin.app.registerPowerup('Rewrite',
+  await plugin.app.registerPowerup('~Rewrite',
     REWRITE_PW_CODE,
     "To Tag rems where the preserved word 'override' effects",
     {slots:[]
     })
 
   await plugin.app.registerPowerup(
-    'PartialSlot',
+    '~PartialSlot',
     PARTIAL_SLOT,
     "To Tag portals 'partial' function brings",
     {slots:[]
     }
   );
 
-  await plugin.app.registerPowerup('Pointer',
+  await plugin.app.registerPowerup('~Pointer',
     POINTER_PW_CODE,
     "To make a reference to Rem to be a 'pointer' rem",
     {slots:[]
@@ -79,7 +79,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   let combiner=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
   let pointer=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
 
-  // A command that toggles whether a rem is a 'partial' rem
+  // A command that clear all the OON powerUp tags
   await plugin.app.registerCommand({
     id: 'startOON',
     name: 'Clear OON tags',
@@ -97,6 +97,8 @@ async function onActivate(plugin: ReactRNPlugin) {
     },
   });
 
+
+
   const AddAutomateObNHandler= (r:Rem|undefined,ObjTagCode:string)=>
   {
     let HandlerRecord={
@@ -105,7 +107,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     }
     let handler=handlers[ObjTagCode];
     let AutomateObNHandler=async ()=>{
-      let state=r?.hasPowerup(ObjTagCode)
+      let state=await r?.hasPowerup(ObjTagCode)
       if(!state)
       {
         plugin.event.removeListener(AppEvents.RemChanged,r?._id,AutomateObNHandler)
