@@ -15,20 +15,21 @@ import {
 } from './Handlers';
 import { JSObject, useHandlers } from './Handlers';
 
-
-const OBJECT_PW_CODE="O_O_N"
-export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
-
-
 export const REWRITE_PW_CODE:string="Override"
 export const PARTIAL_PW_CODE:string="Partial"
 export const POINTER_PW_CODE:string="Pointer"
+export const OBJECT_PW_CODE:string="O_O_N_"
+export const SLOT_OBJ_IS = "ObjIs"
+
+export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
+
 
 
 const options=[partialOption,pointerOption]
 const optionsDict:JSObject={}
 optionsDict[partialOption]=PARTIAL_PW_CODE;
 optionsDict[pointerOption]=POINTER_PW_CODE;
+
 
 
 // export   //Inspired by a Y combinator ^_^
@@ -43,6 +44,13 @@ optionsDict[pointerOption]=POINTER_PW_CODE;
 async function onActivate(plugin: ReactRNPlugin) {
   let handlers=useHandlers(plugin)
 
+  await plugin.app.registerPowerup(
+    'Object',
+    OBJECT_PW_CODE,
+    "A set of PowerUps enabling you to take notes like using OOP(Object Orient Programming) language based on the support of RN's native tag-slot system",
+    {slots:[
+        {code:SLOT_OBJ_IS, name:'This object is', onlyProgrammaticModifying:true,hidden:true },
+      ]})
 
   await plugin.app.registerPowerup(
     '~Partial',
@@ -75,9 +83,12 @@ async function onActivate(plugin: ReactRNPlugin) {
 
 
 
-
+  let OONTag=await plugin.powerup.getPowerupByCode(OBJECT_PW_CODE);
   let combiner=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
-  let pointer=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
+  let pointer=await plugin.powerup.getPowerupByCode(POINTER_PW_CODE);
+  // combiner?.addPowerup(OBJECT_PW_CODE);
+  // pointer?.addPowerup(OBJECT_PW_CODE);
+
 
   // A command that clear all the OON powerUp tags
   await plugin.app.registerCommand({
@@ -86,12 +97,16 @@ async function onActivate(plugin: ReactRNPlugin) {
     keywords:'oon',
     action: async () => {
       let hostRem=await plugin.focus.getFocusedRem();
+      await hostRem?.setPowerupProperty(OBJECT_PW_CODE,SLOT_OBJ_IS,[])
+      await hostRem?.removePowerup(OBJECT_PW_CODE);
       for (let op of options)
       {
         let pw2Remove=optionsDict[op];
         if(await hostRem?.hasPowerup(pw2Remove))
         {
+
           await hostRem?.removePowerup(pw2Remove)
+
         }
       }
     },
@@ -146,8 +161,11 @@ async function onActivate(plugin: ReactRNPlugin) {
             await handle();
             plugin.event.addListener(AppEvents.RemChanged,taggedWithOON._id,handle)
             ListenerRecord.prev.set(taggedWithOON._id,handle);
-
-
+            if(ObjPowerUp)
+            {
+              await taggedWithOON.addPowerup(OBJECT_PW_CODE);
+              await taggedWithOON.setPowerupProperty(OBJECT_PW_CODE,SLOT_OBJ_IS,await plugin.richText.rem(ObjPowerUp).value())
+            }
           }
           ListenerRecord.current.add(taggedWithOON._id);
         }
@@ -176,7 +194,6 @@ async function onActivate(plugin: ReactRNPlugin) {
   {
     let pointerHandle=await  getObjectNotingProcess(POINTER_PW_CODE);
     await pointerHandle();
-
     plugin.event.addListener(AppEvents.RemChanged,pointer?._id,pointerHandle);
   }
 

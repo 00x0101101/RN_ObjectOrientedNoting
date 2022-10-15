@@ -208,7 +208,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
     }
     else if(refOrPortal===USE_REF)
     {
-      for(target of targets.values())
+      for([targetId,target] of targets.entries())
       {
         let childrenRemPartial=await remPartial?.getChildrenRem();
         if(childrenRemPartial&&(await childrenRemPartial).length&&target)
@@ -223,15 +223,16 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
                 newRem=rr;
                 PartialHandlerRecord.current.add(newRem?._id);
                 // New rem has been written to database correctly, clear the lock!
-                remsReferencedAlready.delete(child._id);
+                remsReferencedAlready.delete(child._id+targetId);
               }
             }
             if(!await child.isSlot())continue
 
-            if(!newRem&&!remsReferencedAlready.has(child._id))
+            if(!newRem&&!remsReferencedAlready.has(child._id+targetId))
             {
               //add the lock when new rem beginning to create
-              remsReferencedAlready.add(child._id);
+              console.log(child.text+":"+child._id+">>"+targetId+":"+target?.text);
+              remsReferencedAlready.add(child._id+targetId);
               PartialHandlerRecord.current.add(newRem?._id);
               newRem=await plugin.rem.createRem();
               await newRem?.setText(await plugin.richText.rem(child).value());
