@@ -85,7 +85,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   await plugin.app.registerPowerup('~Instance',
     INSTANCE_PW_CODE,
-    "To make a reference to Rem to be a 'pointer' rem",
+    "To tag a rem as a `instance` ",
     {slots:[]
     })
 
@@ -204,7 +204,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   if(ins)
   {
-    let instanceHandle=await  getObjectNotingProcess(POINTER_PW_CODE);
+    let instanceHandle=await  getObjectNotingProcess(INSTANCE_PW_CODE);
     await instanceHandle();
     plugin.event.addListener(AppEvents.RemChanged,pointer?._id,instanceHandle);
   }
