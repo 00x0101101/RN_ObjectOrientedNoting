@@ -206,7 +206,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   {
     let instanceHandle=await  getObjectNotingProcess(INSTANCE_PW_CODE);
     await instanceHandle();
-    plugin.event.addListener(AppEvents.RemChanged,pointer?._id,instanceHandle);
+    plugin.event.addListener(AppEvents.RemChanged,ins?._id,instanceHandle);
   }
 }
 
