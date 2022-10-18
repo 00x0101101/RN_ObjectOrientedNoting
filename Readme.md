@@ -34,6 +34,15 @@ During RemNote's start or the rem tagged with ~partial (`New content added to   
 
 ![](public/UsePointerToClass2.gif)
 
+### `Instance(of)` in JS
+- this powerUp is used to distinguish `class`&`object` or `definition`&`application`, which may be helpful when using RemNote as a math notebook to document the formula you learned and math exercise you did 
+- For `instance`, 
+  1. "Newton-Leibniz formula" is a `class` 
+  2. A question like "a rabbit ran from (0,0) to (1,0) along the trace of *y=sin(πx)*. how long did it run? " is a `object`
+  3. the question in 2 is an `instance(of)` the usage of 1.
+  4. And the question in 2 can be tagged with this powerUp to note that it is an `exercise log`, not a `formula` needing memorize.
+- **You can use this powerUp by just typing `##~Instance`** 
+- At present (version 0.2.1) this powerUp does not have any special function. It only works as an identifier facilitate sorting in the backlink panel and a CSS tag to distinguish `class` and `Object`
 
 ## How to use
   

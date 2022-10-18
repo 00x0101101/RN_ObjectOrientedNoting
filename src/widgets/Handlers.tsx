@@ -1,4 +1,5 @@
 import {
+  INSTANCE_PW_CODE,
 
   PARTIAL_PW_CODE,
   PARTIAL_SLOT, POINTER_PW_CODE,
@@ -19,6 +20,7 @@ export interface JSObject {
 
 export const partialOption="toggle partial"
 export const pointerOption="toggle pointer"
+export const instanceOption="toggle instance"
 
 export const useHandlers=(plugin:ReactRNPlugin)=>{
   async function addPortal2 (parentRem:Rem,portalContent:Rem[]){
@@ -267,14 +269,20 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
   }
 
+
+  const instanceHandle = () => {
+
+  }
+
   let obj:JSObject={
     // TS engine would be confused by the key:  plaintext or a variable name?
-    // U want it to be a variable name, but TS engine thinks it as plaintext like obj["POINTER_PW_CODE"]
+    // U want it to be a variable name, but TS engine regards it as plaintext like obj["POINTER_PW_CODE"]
     // PARTIAL_PW_CODE:partialHandle,
     // POINTER_PW_CODE:pointerHandle
   }
   obj[PARTIAL_PW_CODE]=partialHandle;
   obj[POINTER_PW_CODE]=pointerHandle;
+  obj[INSTANCE_PW_CODE]=instanceHandle;
   return obj
 }
 
