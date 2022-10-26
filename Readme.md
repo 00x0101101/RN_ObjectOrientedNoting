@@ -4,9 +4,9 @@
 
 ###  The "Reference Tree" problem and why this plugin was created.
 - There are occasions where "A reference to a rem containing references" appears, leading to a "reference chain" which can make up a "reference tree", sometimes it may be what you want, for the reference has a "good context" with abundant information.
-  - ![](public/ReferenceTreeWithAbundantInfo.png)
-  - ![](public/ReferenceTreeWithAbundantInfo1.png)
-  - ![](public/ReferenceTreeWithAbundantInfo2.png)
+  - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithAbundantInfo.png)
+  - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithAbundantInfo1.png)
+  - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithAbundantInfo2.png)
   
   - The rem [[Rabies]] vaccine has a reference  to the rem Rabies
   - The rem  There are no contraindications to [[ [[Rabies]] Vaccination]], for any side effect is not comparable to death rabies can cause.    and  The price of the canine [[ [[Rabies]] Vaccination]] is one-tenth of vaccine for a human.   have references to the rem [[Rabies]] vaccine
@@ -21,25 +21,25 @@ graph TD;
     
 -
 - But for some occasions where a "reference chain" do not contain effective information, the "reference tree" would be a handicap when using backlinks and need to be "flatten". A classic example is `slot` system.
-  - ![](public/ReferenceTreeWithLittleInfo2.png)
+  - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithLittleInfo2.png)
   - Here are brief about elemental sodium(Na) and potassium(K), and a sample of laboratory safety regulation.
   - Because safety is the most important thing for a lab, I want to make "matters needing attention when preserving flammable metal" a slot under the rem `Elemental Sodium` and `Elemental Potassium` so RemNote will remind me when I reference the rem `Elemental Sodium` elsewhere.
 
   - Reminding you to cope things according to the templates/slots and keeping you from forgetting some key steps or aspects are basic functions a template system can do.
-  ![](public/SlotAutoRemind.png)
+  ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/SlotAutoRemind.png)
   - but I do not want to make rems with same content scattered in my knowledge base lest I cannot find all the backlinks in one place and I may forget to modify all the rems with duplicate content. 
   (Maybe you have heard the principle `DRY/Don't Repeat Yourself` in the field of programming. It is all the same. **I think taking note is like preparing program for your mind, and you can use the note like calling API functions someday. That's where the name of the plugin `ObjectOrientedNoting`  comes**)
   - So I have placed a reference to what the regulation said about flammable metal under the rem  `Elemental Sodium` and set the reference rem  `- [[must be preserved in kerosene and kept away from any heat source!]]`  itself a slot
-    - ![](public/ReferenceTreeWithLittleInfo1.png)
+    - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithLittleInfo1.png)
   - But when applying the reference rem's slot, a "bad reference tree" needing to be flattened appears.
-    - ![](public/ReferenceTreeWithLittleInfo4.png)
+    - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithLittleInfo4.png)
   - The "bad reference tree" needs to be flattened for form the backlink panel of the regulation clause (the true information source), you can find only one rem with reference to the clause, and another reference has referred to the reference rem itself.
-    - ![](public/ReferenceTreeWithLittleInfo3.png)
+    - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ReferenceTreeWithLittleInfo3.png)
 
 
 ###  `Pointer/*` in C++ to flatten the "bad reference tree"
 - `Pointer` is aimed to reduce the height of "reference tree" and flatten the tree by reform the "reference chain" to "reference fork".
-  - ![](public/UsePointer3.gif)
+  - ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/UsePointer3.gif)
   - When the tag `##~pointer` added, the "reference tree" changed from a "chain" to a "fork" like this. As you can see, the height of the "reference tree" has been reduced, namely it has been flattened.
 ```mermaid
 graph LR;
@@ -108,7 +108,7 @@ graph LR;
   end
 ```
 - Then you can see all the 2 rems referring to the clause's backlink panel.
-  ![](public/TheEffectOfPointerRem.png)
+  ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/TheEffectOfPointerRem.png)
 
 - Let's regroup a little bit.
   1. I want to make the rem of a safety regulation clause a slot under rems about dangerous chemical `elemental sodium/potassium` elsewhere.
@@ -125,16 +125,16 @@ graph LR;
 
 
 
-![](public/UsePointerToClass2.gif)
+![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/UsePointerToClass2.gif)
 
 ### `Partial` in C# and Combination Problem
   - Backlinks enable us to "write everywhere and make up in one place" by just toggling rems from backlink portals to the document. 
   - `Partial` goes further, making "make up in one place" can be displaced from the workflow when it comes to the Template/Slot system.
   - A rem `RemA` tagged with `Partial` will find all the rem it referenced and added all the slots of `RemA` to them, attaching the slots `RemA` has to rems `RemA` has referenced.
-    ![](public/PartialAttachSlots.gif)
+    ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/PartialAttachSlots.gif)
     - Well, you can see the lab safety clause has referenced the rems `Elemental Sodium` and `Elemental Potassium`, when this clause tagged with `~Partial`, slots under the clause will be added under the two rems(`Elemental Sodium` and `Elemental Potassium`) and the two added slots' reference themselves will be set as a slot too.
     - The slots' reference will be `Pointer` rems implicitly.
-      ![](public/ImplicitPointerOfPartial.gif)
+      ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/ImplicitPointerOfPartial.gif)
     - Why the slots' reference becomes slots too? Because they are designed to be consequence of that the lab safety clause's slots have **"attached"** to the brief of the two kinds of flammable metal.
     - Oh, I forgot to get a word in, you can find that the clause tagged with `~Partial` can "attach" its slots to several rems in the meantime without violating the `DRY/Don't Repeat Itself` principle or moving the clause elsewhere which may be a detriment to the integrity of this lab regulation.
   - The powerUp `~Partial` comes down from the key word `partial` in C#, where this keyword is a modifier to class (whose name is `Form1` in the example), making the compiler combines the partial implements of `Form1` from different files to an integral class. *It can also be illustrated as that the "partial classes" have **"attached"** to the main part of the class `Form1`.*
@@ -154,16 +154,16 @@ public partial class Form1 : Form
 
 When a Rem (like `New content added to     [[Class 1]]  and  [[Class 2]] ` below)  has been tagged with `~Partial`,  slots of **A**  ( like   `New content added to     [[Class 1]]  and  [[Class 2]]   > Method 3`  in the example below) will change any reference to the  Rem **A**'s slots reference (such as `[[Class2 > [[New content added to     [[Class 1]]  and  [[Class 2]]   > Method 3]] ]]`  ) to what the reference Rem **A** pointing to (like `[[  New content added to     [[Class 1]]  and  [[Class 2]]   > [[Method 3]]   ]] ` )
 
-![](public/UsePointerToClass1.gif)
+![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/UsePointerToClass1.gif)
 
-![](public/UsePointerToClass2.gif)
+![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/UsePointerToClass2.gif)
 
 
 
 
 During RemNote's start or the rem tagged with ~partial (`New content added to     [[Class 1]]  and  [[Class 2]] `) being edited, it will add reference pointing to its slot to what the tagged rem has references to
 
-![](public/AddPointerAutomatically.gif)
+![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/AddPointerAutomatically.gif)
 
 
 
