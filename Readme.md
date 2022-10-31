@@ -1,6 +1,16 @@
+## How to use
+- This plugin works with a set of powerUps.
+- You can use these powerUps just by using them as tags to utilize the plugin.
+- You can use slash command `clear OON tags` to clear all OON tags attached to current focused rem.
+
+
+
 ## Features
 
   - Provide some powerUps making noting with the `template/slot system` in RemNote like using OOP languages like Java and C#  where these powerUps can work as some preserved words in these programme languages
+
+
+
 
 ###  The "Reference Tree" problem and why this plugin was created.
 - There are occasions where "A reference to a rem containing references" appears, leading to a "reference chain" which can make up a "reference tree", sometimes it may be what you want, for the reference has a "good context" with abundant information.
@@ -167,18 +177,16 @@ During RemNote's start or the rem tagged with ~partial (`New content added to   
 
 
 
-### `Instance(of)` in JS
+### `Instance(of)` and `Extends(ing)` in JS
 - this powerUp is used to distinguish `class`&`object` or `definition`&`application`, which may be helpful when using RemNote as a math notebook to document the formula you learned and math exercise you did 
 - For `instance`, 
   1. "Newton-Leibniz formula" is a `class` 
-  2. A question like "a rabbit ran from (0,0) to (1,0) along the trace of *y=sin(πx)*. how long did it run? " is a `object`
-  3. the question in 2 is an `instance(of)` the usage of 1.
-  4. And the question in 2 can be tagged with this powerUp to note that it is an `exercise log`, not a `formula` needing memorize.
-- **You can use this powerUp by just typing `##~Instance`** 
-- At present (version 0.2.1) this powerUp does not have any special function. It only works as an identifier facilitate sorting in the backlink panel and a CSS tag to distinguish `class` and `Object`
+  2. "Green formula" `extends` the "Newton-Leibniz formula" into functions with 2 variables
+  3. A question like "a rabbit ran from (0,0) to (1,0) along the trace of *y=sin(πx)*. how long did it run? " is a `object`
+  4. the question in 2 is an `instance(of)` the usage of 1.
+  5. And the question in 2 can be tagged with this powerUp to note that it is an `exercise log`, not a `formula` needing memorize.
+- **You can use this powerUp by just typing `##~Instance` or `##~Extending`** 
+- At present (version 0.2.2) this powerUp does not have any special function. It only works as an identifier facilitate sorting in the backlink panel and a CSS tag to distinguish `class` and `Object`
 
-## How to use
-  
-- You can use these powerUps just by using them as tags.
-- You can use slash command `clear OON tags` to clear all OON tags attached to current focused rem.
+
 

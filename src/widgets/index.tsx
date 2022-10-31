@@ -8,30 +8,23 @@ import '../style.css';
 import '../App.css';
 
 
-import {
-  instanceOption,
-  partialOption,
-  pointerOption,
 
-} from './Handlers';
 import { JSObject, useHandlers } from './Handlers';
 
 export const REWRITE_PW_CODE:string="Override"
 export const PARTIAL_PW_CODE:string="Partial"
 export const POINTER_PW_CODE:string="Pointer"
 export const INSTANCE_PW_CODE:string="Instance"
+export const EXTEND_PW_CODE:string="Extending"
 export const OBJECT_PW_CODE:string="O_O_N_"
 export const SLOT_OBJ_IS = "ObjIs"
 
 export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
 
 
+export const pwList=[PARTIAL_PW_CODE,POINTER_PW_CODE,INSTANCE_PW_CODE,EXTEND_PW_CODE]
 
-const options=[partialOption,pointerOption,instanceOption]
-const optionsDict:JSObject={}
-optionsDict[partialOption]=PARTIAL_PW_CODE;
-optionsDict[pointerOption]=POINTER_PW_CODE;
-optionsDict[instanceOption]=INSTANCE_PW_CODE;
+
 
 
 
@@ -82,6 +75,11 @@ async function onActivate(plugin: ReactRNPlugin) {
     "To make a reference to Rem to be a 'pointer' rem",
     {slots:[]
     })
+	await plugin.app.registerPowerup('~Extending',
+		EXTEND_PW_CODE,
+		"To tag a rem as a `class extend` ",
+		{slots:[]
+		})
 
   await plugin.app.registerPowerup('~Instance',
     INSTANCE_PW_CODE,
@@ -90,11 +88,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     })
 
 
-  //let OONTag=await plugin.powerup.getPowerupByCode(OBJECT_PW_CODE);
-  let combiner=await plugin.powerup.getPowerupByCode(PARTIAL_PW_CODE);
-  let pointer=await plugin.powerup.getPowerupByCode(POINTER_PW_CODE);
-  let ins=await plugin.powerup.getPowerupByCode(INSTANCE_PW_CODE)
-
+  
 
   // A command that clear all the OON powerUp tags
   await plugin.app.registerCommand({
@@ -105,9 +99,9 @@ async function onActivate(plugin: ReactRNPlugin) {
       let hostRem=await plugin.focus.getFocusedRem();
       await hostRem?.setPowerupProperty(OBJECT_PW_CODE,SLOT_OBJ_IS,[])
       await hostRem?.removePowerup(OBJECT_PW_CODE);
-      for (let op of options)
+      for (let pwCode of pwList)
       {
-        let pw2Remove=optionsDict[op];
+        let pw2Remove=pwCode;
         if(await hostRem?.hasPowerup(pw2Remove))
         {
           await hostRem?.removePowerup(pw2Remove)
@@ -187,27 +181,27 @@ async function onActivate(plugin: ReactRNPlugin) {
     }
   }
 
-  if(combiner)
-  {
-    let partialHandle=await getObjectNotingProcess(PARTIAL_PW_CODE);
-    await partialHandle()
-    //Each time when the "Partial" PowerUp changed due to some rem use "Partial" PowerUp as a tag, the "partialHandle" was triggered
-    plugin.event.addListener(AppEvents.RemChanged,combiner?._id,partialHandle)
-  }
 
-  if(pointer)
-  {
-    let pointerHandle=await  getObjectNotingProcess(POINTER_PW_CODE);
-    await pointerHandle();
-    plugin.event.addListener(AppEvents.RemChanged,pointer?._id,pointerHandle);
-  }
 
-  if(ins)
-  {
-    let instanceHandle=await  getObjectNotingProcess(INSTANCE_PW_CODE);
-    await instanceHandle();
-    plugin.event.addListener(AppEvents.RemChanged,ins?._id,instanceHandle);
-  }
+ const initalizePowerUp=async (pwCode:string) => {
+    let pwRem=await plugin.powerup.getPowerupByCode(pwCode);
+    if(pwRem)
+    {
+      //find powerUp rem itself and attach event listener to it
+      let pwHandle=await getObjectNotingProcess(pwCode);
+      await pwHandle();
+      plugin.event.addListener(AppEvents.RemChanged,pwRem?._id,pwHandle)
+    }
+ }
+for(const pwCode of pwList)
+{
+  await initalizePowerUp(pwCode);
+}
+ 
+ 
+ 
+
+  
 }
 
 

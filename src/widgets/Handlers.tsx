@@ -1,4 +1,5 @@
 import {
+  EXTEND_PW_CODE,
   INSTANCE_PW_CODE,
 
   PARTIAL_PW_CODE,
@@ -18,9 +19,19 @@ export interface JSObject {
   [key: string]: any
 }
 
-export const partialOption="toggle partial"
-export const pointerOption="toggle pointer"
-export const instanceOption="toggle instance"
+// export const partialOption="toggle partial"
+// export const pointerOption="toggle pointer"
+// export const instanceOption="toggle instance"
+// export const extendingOption="toggle extending"
+
+//  const options=[partialOption,pointerOption,instanceOption,extendingOption]
+//  const optionsDict:JSObject={}
+//  optionsDict[partialOption]=PARTIAL_PW_CODE;
+//  optionsDict[pointerOption]=POINTER_PW_CODE;
+//  optionsDict[instanceOption]=INSTANCE_PW_CODE;
+//  optionsDict[extendingOption]=EXTEND_PW_CODE;
+
+
 
 export const useHandlers=(plugin:ReactRNPlugin)=>{
   async function addPortal2 (parentRem:Rem,portalContent:Rem[]){
@@ -200,13 +211,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
         }
       }
       updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle))
-      // PartialHandlerRecord.prev.forEach((remPartial,i,map)=>{
-      //   if(!PartialHandlerRecord.current.has(remPartial))
-      //   {
-      //     plugin.event.removeListener(AppEvents.RemChanged,remPartial,PartialHandlerRecord.prev.get(remPartial))
-      //     map.delete(remPartial);
-      //   }
-      // })
+      
     }
     else if(refOrPortal===USE_REF)
     {
@@ -253,12 +258,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
             PartialHandlerRecord.current.add(newRem?._id);
           }
         updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle));
-        // PartialHandlerRecord.prev.forEach((value, key)=>{
-        //   if(!PartialHandlerRecord.current.has(key))
-        //   {
-        //     PartialHandlerRecord.prev.delete(key);
-        //   }
-        // })
+        
       }
     }
 
@@ -274,6 +274,11 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
   }
 
+
+  const extendingHandle = () => {
+
+  }
+
   let obj:JSObject={
     // TS engine would be confused by the key:  plaintext or a variable name?
     // U want it to be a variable name, but TS engine regards it as plaintext like obj["POINTER_PW_CODE"]
@@ -283,6 +288,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
   obj[PARTIAL_PW_CODE]=partialHandle;
   obj[POINTER_PW_CODE]=pointerHandle;
   obj[INSTANCE_PW_CODE]=instanceHandle;
+  obj[EXTEND_PW_CODE]=extendingHandle;
   return obj
 }
 
