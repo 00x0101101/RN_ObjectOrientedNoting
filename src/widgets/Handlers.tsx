@@ -3,7 +3,7 @@ import {
 	INSTANCE_PW_CODE,
 
 	PARTIAL_PW_CODE,
-	PARTIAL_SLOT, POINTER_PW_CODE,
+	PARTIAL_SLOT, POINTER_PW_CODE, REWRITE_PW_CODE,
 } from './index';
 import {
 	ReactRNPlugin, RemType, RichTextInterface,
@@ -213,7 +213,8 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 			updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle))
 			
 		}
-		else if(refOrPortal===USE_REF)
+		else 
+		if(refOrPortal===USE_REF)
 		{
 			for([targetId,target] of targets.entries())
 			{
@@ -233,7 +234,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 								remsReferencedAlready.delete(child._id+targetId);
 							}
 						}
-						if(!await child.isSlot())continue
+						if(!await child.isSlot()||await child.hasPowerup(REWRITE_PW_CODE))continue;
 
 						if(!newRem&&!remsReferencedAlready.has(child._id+targetId))
 						{
@@ -279,6 +280,119 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
 	}
 
+	const rewritingHandle= async (rewriterRem:Rem,handlerRecord:{prev:Map<any, any>,current:Set<any>}) =>{
+		
+		//To avoid confliction with `Partial`, rewriter should not be a slot.
+		if(await rewriterRem.isSlot())
+		{
+			await rewriterRem.setIsSlot(false);
+		}
+		
+		let rewriteeRemsCandidates=await rewriterRem.remsBeingReferenced();
+		for(let r of rewriteeRemsCandidates)
+		{
+			let pq=await findInherite(rewriterRem,r);
+			if(pq)
+			{
+				let rewriteeHandler=((k:Rem,rerOwner:Rem,clanTreeDepth:number)=>{
+					let clanTreeIndex=clanTreeDepth+1;
+					return async ()=>{
+						if(!await rewriterRem.hasPowerup(REWRITE_PW_CODE))
+						{
+							plugin.event.removeListener(AppEvents.RemChanged,k._id,rewriteeHandler);
+							return;
+						}
+						let candidates=await k.remsReferencingThis()
+						for(let candidate of candidates)
+						{
+							if(!await candidate.hasPowerup(REWRITE_PW_CODE))
+							{
+								let parent=await candidate.getParentRem();
+								while(clanTreeIndex>0&&parent)
+								{
+									for(const tag of await parent.getTagRems())
+									{
+										if(tag._id===rerOwner._id)
+										{
+											await usePointer(k,candidate,rewriterRem);
+										}
+									}
+									parent=await parent.getParentRem();
+									clanTreeIndex--;
+								}
+							}
+							clanTreeIndex=clanTreeDepth;
+							
+						}
+						
+					}
+				})(r,pq[0],pq[2]);
+				plugin.event.addListener(AppEvents.RemChanged,r._id,rewriteeHandler);
+				
+			}
+			
+		}
+		
+
+		// async function getRewriterOwner(rewriterRem:Rem,rewriteeRem:Rem) {
+		// 	let p=await rewriterRem.getParentRem();
+		// 	let qid=rewriteeRem.parent;
+		// 	if(p&&qid)
+		// 	{
+		// 		let pps=await p.remsBeingReferenced();
+		// 		pps=pps.concat(await p.ancestorTagRem())
+		// 		for(const pp of pps)
+		// 		{
+		// 			if(pp._id===qid&&!await pp.isPowerup())
+		// 			{
+		// 				let q=plugin.rem.findOne(qid);
+		// 				return [p,q];
+		// 			}
+		// 		}
+		// 	}
+
+		// 	return null
+		// }
+		
+		
+		async function findInherite(rewriter:Rem,rewritee:Rem):Promise<[Rem,Rem,number]|null>
+		{
+			let p:Rem|undefined=rewriter;
+			let q:Rem|undefined=rewritee;
+			let protecterlock=256;
+			let i=0;
+			let chainIsIntact=true;
+			while(p&&q&&i<=protecterlock&&chainIsIntact)
+			{
+				let classtags=await p.getTagRems();
+				for(let t of classtags)
+				{
+					if(t._id===q._id)
+					return [p,q,i+1];
+				}
+				let ss=await p.remsBeingReferenced();
+				
+				let flag=false;
+				for(let s of ss)
+				{
+					if(s._id===q._id)
+						flag=true;
+					break;
+				}
+				chainIsIntact=flag;
+				p=await p.getParentRem();
+				q=await q.getParentRem();
+				i++;
+			}
+			if(i>protecterlock)
+			{
+				console.error("Oops,Is there a parentship loop?")
+			}
+			return null;
+		}
+
+	}
+
 	let obj:JSObject={
 		// TS engine would be confused by the key:  plaintext or a variable name?
 		// U want it to be a variable name, but TS engine regards it as plaintext like obj["POINTER_PW_CODE"]
@@ -289,6 +403,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 	obj[POINTER_PW_CODE]=pointerHandle;
 	obj[INSTANCE_PW_CODE]=instanceHandle;
 	obj[EXTEND_PW_CODE]=extendingHandle;
+	obj[REWRITE_PW_CODE]=rewritingHandle;
 	return obj
 }
 

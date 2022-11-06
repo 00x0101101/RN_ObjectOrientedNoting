@@ -22,7 +22,7 @@ export const SLOT_OBJ_IS = "ObjIs"
 export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
 
 
-export const pwList=[PARTIAL_PW_CODE,POINTER_PW_CODE,INSTANCE_PW_CODE,EXTEND_PW_CODE]
+export const pwList=[PARTIAL_PW_CODE,POINTER_PW_CODE,INSTANCE_PW_CODE,EXTEND_PW_CODE,REWRITE_PW_CODE]
 
 
 
@@ -86,7 +86,12 @@ async function onActivate(plugin: ReactRNPlugin) {
 		"To tag a rem as a `instance` ",
 		{slots:[]
 		})
-
+	
+	await plugin.app.registerPowerup('~Rewrite',
+		REWRITE_PW_CODE,
+		"Implementation of polymorphism, enable derived rems  ",
+		{slots:[]
+		})
 
 	
 
@@ -120,7 +125,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 			current:new Set()
 		}
 		let handler=handlers[ObjTagCode];
-		let AutomateObNHandler=async ()=>{
+		let AutomateObNHandler=async (event:any)=>{
 			let state=await r?.hasPowerup(ObjTagCode)
 			if(!state)
 			{
@@ -157,7 +162,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 					if(!ListenerRecord.prev.has(taggedWithOON._id))
 					{
 						let handle=AddAutomateObNHandler(taggedWithOON,ObjPowerUpCode)
-						await handle();
+						await handle(null);
 						plugin.event.addListener(AppEvents.RemChanged,taggedWithOON._id,handle)
 						ListenerRecord.prev.set(taggedWithOON._id,handle);
 						if(ObjPowerUp)
