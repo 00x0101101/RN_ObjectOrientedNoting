@@ -234,7 +234,9 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 								remsReferencedAlready.delete(child._id+targetId);
 							}
 						}
+						//To avoid confliction with `Partial`
 						if(!await child.isSlot()||await child.hasPowerup(REWRITE_PW_CODE))continue;
+						//if(await child.hasPowerup(REWRITE_PW_CODE))continue;
 
 						if(!newRem&&!remsReferencedAlready.has(child._id+targetId))
 						{
@@ -246,9 +248,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 							await newRem?.setText(await plugin.richText.rem(child).value());
 							await newRem?.setParent(target);
 							await newRem?.setIsSlot(true);
-
 						}
-
 						if(newRem&&!PartialHandlerRecord.prev.has(newRem?._id))
 						{
 							let handle=addAutomateSlotPointer(newRem)
@@ -282,11 +282,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
 	const rewritingHandle= async (rewriterRem:Rem,handlerRecord:{prev:Map<any, any>,current:Set<any>}) =>{
 		
-		//To avoid confliction with `Partial`, rewriter should not be a slot.
-		if(await rewriterRem.isSlot())
-		{
-			await rewriterRem.setIsSlot(false);
-		}
+		
 		
 		let rewriteeRemsCandidates=await rewriterRem.remsBeingReferenced();
 		for(let r of rewriteeRemsCandidates)
