@@ -184,11 +184,13 @@ During RemNote's start or the rem tagged with ~partial (`New content added to   
   4. the question in 2 is an `instance(of)` the usage of 1.
   5. And the question in 2 can be tagged with this powerUp to note that it is an `exercise log`, not a `formula` needing memorize.
 - **You can use this powerUp by just typing `##~Instance` or `##~Extending`** 
+- **Or just add the two tags just by command `\ins` or `\ext`**
 - At present (version 0.2.2) this powerUp does not have any special function. It only works as an identifier facilitate sorting in the backlink panel and a CSS tag to distinguish `class` and `Object`
 
 
 
-### "Rewrite(Override)" in Java
+
+### `Rewrite(Override)` in Java
 - "Override" is a preserved word to utilize [polymorphism](https://www.educba.com/what-is-polymorphism/) features in OOP languages. 
 
 - A abstract class (like `Fruit`) is like a template that can indicate `Apple`, `Banana`, `Cheery` etc. `Fruit` is abstract because you cannot find a `fruit` that does not belong to any concrete families of fruit.
@@ -218,7 +220,7 @@ During RemNote's start or the rem tagged with ~partial (`New content added to   
 ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/RewriterTemplate.png)
 
 
--When any rems (like a special strain of Apple `Red Fuji`) being tagged with rewriter rem's owner (for instance: type `##Apple` or `##Banana` to add corresponding tag) and add slots from rewritee's owner `Fruit` (RN has native support of inheritation, for a rem can use slots from its ancestor tags), reference to the rewritee slot rem `taste():sweetFromFructoseAndGlucose` added when applying slots will be redircted to the rewriter rem `taste():MayBeSourWhenImmature`, which means `Red Fuji` is a kind of apple and have the taste exclusive to apples besides the general sweet tastes of fruits.
+- When any rems (like a special strain of Apple `Red Fuji`) being tagged with rewriter rem's owner (for instance: type `##Apple` or `##Banana` to add corresponding tag) and add slots from rewritee's owner `Fruit` (RN has native support of inheritation, for a rem can use slots from its ancestor tags), reference to the rewritee slot rem `taste():sweetFromFructoseAndGlucose` added when applying slots will be redircted to the rewriter rem `taste():MayBeSourWhenImmature`, which means `Red Fuji` is a kind of apple and have the taste exclusive to apples besides the general sweet tastes of fruits.
 
 ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UseRewrite.gif)
 

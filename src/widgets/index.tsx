@@ -118,6 +118,32 @@ async function onActivate(plugin: ReactRNPlugin) {
 
 
 
+	await plugin.app.registerCommand({
+		id: 'AsInstance',
+		name: 'Turn to a instance',
+		keywords:'ins',
+		action: async () => {
+			let hostRem=await plugin.focus.getFocusedRem();
+			hostRem?.addPowerup(INSTANCE_PW_CODE);
+			
+		},
+	});
+
+	await plugin.app.registerCommand({
+		id: 'AsExtension',
+		name: "Tag a extend class",
+		keywords:'ext',
+		action: async () => {
+			let hostRem=await plugin.focus.getFocusedRem();
+			hostRem?.addPowerup(EXTEND_PW_CODE);
+			
+		},
+	});
+
+
+
+
+
 	const AddAutomateObNHandler= (r:Rem|undefined,ObjTagCode:string)=>
 	{
 		let HandlerRecord={
