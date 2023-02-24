@@ -102,7 +102,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 	await plugin.app.registerCommand({
 		id: 'startOON',
 		name: 'Clear OON tags',
-		keywords:'oon',
+		quickCode:'oon',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
 			await hostRem?.setPowerupProperty(OBJECT_PW_CODE,SLOT_OBJ_IS,[])
@@ -124,7 +124,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 	await plugin.app.registerCommand({
 		id: 'AsInstance',
 		name: 'Turn to a instance',
-		keywords:'OIns',
+		quickCode:'OIns',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
 			hostRem?.addPowerup(INSTANCE_PW_CODE);
@@ -135,7 +135,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 	await plugin.app.registerCommand({
 		id: 'AsExtension',
 		name: "Tag a extend class",
-		keywords:'OExt',
+		quickCode:'OExt',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
 			hostRem?.addPowerup(EXTEND_PW_CODE);
@@ -146,7 +146,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 	await plugin.app.registerCommand({
 		id: 'AsPointer',
 		name: "Tag a pointer rem",
-		keywords:'OPtr',
+		quickCode:'OPtr',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
 			hostRem?.addPowerup(POINTER_PW_CODE);
@@ -156,8 +156,9 @@ async function onActivate(plugin: ReactRNPlugin) {
 
 	await plugin.app.registerCommand({
 		id: 'AsPartial',
-		name: "Tag a rem as a 'partial' rem, like a 'partial class' in C#",
-		keywords:'OPrl',
+		name: "Tag with '~Partial' ",
+		description:"Tag a rem as a 'partial' rem, like a 'partial class' in C#",
+		quickCode:'OPrl',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
 			hostRem?.addPowerup(PARTIAL_PW_CODE);
@@ -167,8 +168,9 @@ async function onActivate(plugin: ReactRNPlugin) {
 
 	await plugin.app.registerCommand({
 		id: 'AsRewriter',
-		name: "Tag a rem as a 'rewrite' rem, like a '@override class' in JAVA(Implementation of polymorphism)",
-		keywords:'ORwt',
+		name: "Tag with '~Rewrite'",
+		description:"Tag a rem as a 'rewrite' rem, like a '@override class' in JAVA(Implementation of polymorphism)",
+		quickCode:'ORwt',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
 			hostRem?.addPowerup(PARTIAL_PW_CODE);
