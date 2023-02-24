@@ -1,3 +1,5 @@
+Languages: [English](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/README.md) | [简体中文](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/README-zh_CN.md)
+
 ## How to use
 - This plugin works with a set of powerUps.
 - ~~You can use these powerUps just by using them as tags to utilize the plugin.~~ PowerUps cannot be used as tagged manually by `##PowerUps` and you can use slash command instead to attach corresponding PowerUp Tags to the focused Rems.
