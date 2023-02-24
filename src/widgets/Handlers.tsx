@@ -234,7 +234,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 								remsReferencedAlready.delete(child._id+targetId);
 							}
 						}
-						//To avoid confliction with `~Rewrite`
+						//To avoid conflict with `~Rewrite`
 						if(!await child.isSlot()||await child.hasPowerup(REWRITE_PW_CODE))continue;
 						//if(await child.hasPowerup(REWRITE_PW_CODE))continue;
 
