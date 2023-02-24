@@ -1,3 +1,5 @@
+语言: [English](./Readme.md) | [简体中文](./README-zh_CN.md)
+
 ## 如何使用
 - 该插件依赖一套`PowerUp` 工作
 - ~~将这些 `PowerUp` 当作 `##tag` 使用就行~~ RN目前的版本已经无法手动添加PowerUp的tag，需要使用对应的指令给当前焦点下的Rem添加Tag。

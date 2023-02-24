@@ -1,4 +1,4 @@
-Languages: [English](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/README.md) | [简体中文](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/README-zh_CN.md)
+Languages: [English](./Readme.md) | [简体中文](./README-zh_CN.md)
 
 ## How to use
 - This plugin works with a set of powerUps.
