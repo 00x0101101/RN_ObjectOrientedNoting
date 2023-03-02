@@ -236,3 +236,28 @@ During RemNote's start or the rem tagged with `~Partial` (`New content added to 
 
 ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UseRewrite.gif)
 
+## Another Way To Tackle "Combination Problem": `~Mount`
+
+### Difference between `~Partial` and `~Mount`
+- Unlike `~Partial` making some references to the tagged rem's slots be an implicit `~Pointer`, `~Mount` makes some reference to the tagged rem itself be a `~Pointer` rem when put to use in similar cases.
+
+![UsageOfMount](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UsageOfMount.png)
+
+### The cases suitable for `~Mount`
+
+- Maybe `~Partial` is an approach to handle "Combination Problem", but when it comes to `~Partial` rems with lots of slot, the host rem that `~Partial` rems are attaching to may look like a mess, because many references to slots serving as implicit `~Pointer` have been mixed with the original content of the host rem.
+
+![`Partial`RemWithLotsOfSlots](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/`Partial`RemWithLotsOfSlots.png)
+
+![DazingAmountOfSlotRefs](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/DazingAmountOfSlotRefs.png)
+
+- If you need not let these slots visible under the host rem as reminders, maybe it is a better way to 
+place the reference of "`~Partial` rem" itself under the host rem as an implicit `~Pointer` instead of filling all the slots into the host rem. 
+This thought seems like a device mounting on the host OS and expose its access to the host OS and users, and the  reference to the "`~Partial` rem" under the host seems to be the "Mount Point".
+
+- And this is why `~Mount` rolls out, when a rem is tagged with `~Mount` instead of `~Partial`,the dizzy amount of references to slots can be replaced by just one implicit `~Pointer` reference ("Mount Point") to the owner of slot (`~Mount`-tagged rem) itself. Tidy and simple.
+
+- The `~Mount` Rem's reference becoming the implicit `~Pointer` instead of its slots' references with `~Partial` used will redirect references to the implicit `~Pointer`
+itself to the `~Partial` Rem it refers to, and then you can use RN native "template-slot" system on the `~Partial` Rem directly.
+
+![SlotPtrReplacedByOneMountPoint](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/SlotPtrReplacedByOneMountPoint.png)

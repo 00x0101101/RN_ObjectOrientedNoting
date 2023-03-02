@@ -1,23 +1,24 @@
 import {
-	EXTEND_PW_CODE,
-	INSTANCE_PW_CODE,
-
-	PARTIAL_PW_CODE,
-	PARTIAL_SLOT, POINTER_PW_CODE, REWRITE_PW_CODE,
-} from './index';
-import {
 	ReactRNPlugin, RemType, RichTextInterface,
 } from '@remnote/plugin-sdk';
-
+import { useUtil } from './Utilities';
 import { AppEvents, Rem } from '@remnote/plugin-sdk';
-import { updateELRecord } from './EventListenerRecorder';
+import { EventListenerRecorder } from './EventListenerRecorder';
+import {JSObject} from './typeDefs';
+import {
+	EXTEND_PW_CODE,
+	INSTANCE_PW_CODE, MOUNT_PW_CODE,
+	PARTIAL_PW_CODE,
+	PARTIAL_SLOT,
+	POINTER_PW_CODE,
+	REWRITE_PW_CODE,
+} from './consts';
+import { RemCreateSynchronizer } from './RemCreateSynchronizer';
 
 const USE_REF="REF"
 const USE_PORTAL="PORTAL"
 let refOrPortal=USE_REF
-export interface JSObject {
-	[key: string]: any
-}
+
 
 // export const partialOption="toggle partial"
 // export const pointerOption="toggle pointer"
@@ -34,92 +35,12 @@ export interface JSObject {
 
 
 export const useHandlers=(plugin:ReactRNPlugin)=>{
-	async function addPortal2 (parentRem:Rem,portalContent:Rem[]){
-		let portal=await plugin.rem.createPortal();
-		if(portal)
-			portalContent.forEach(content=>{
-				if(portal)
-					content.addToPortal(portal);
-			})
-		await portal?.setParent(parentRem);
-		return portal
-	}
-
-	const addAutomateSlotPointer=(RefOfSlot:Rem)=>{
-		async function AutomateSlotPointer(){
-			if((!(await isValidPartialPointer(RefOfSlot)))&&(!(await isValidPointerRem(RefOfSlot))))
-			{
-				plugin.event.removeListener(AppEvents.RemChanged,RefOfSlot._id,AutomateSlotPointer)
-				return;
-			}
-			await usePointerBatchFor(RefOfSlot);
-		}
-		return AutomateSlotPointer
-	}
-
-	const addAutomateSlotLoader= (hostRem:string|Rem|undefined,slotPortal:Rem|undefined)=>{
-
-		// plugin.app.toast("SlotLoader Ready!");
-		async function automateDetector()
-		{
-			// await plugin.app.toast("SlotLoader Start!")
-			if(!hostRem)return;
-			if(typeof hostRem==="string")
-			{
-				hostRem=await plugin.rem.findOne(hostRem);
-			}
-			// await plugin.app.toast("SlotLoader Effected:"+hostRem?.text.toString())
-			// console.warn("SlotLoader Effected:"+hostRem)
-			let slots=await getValidPartialInPortal(hostRem);
-			if(hostRem&&!slots)
-			{
-				plugin.event.removeListener(AppEvents.RemChanged,hostRem._id,automateDetector)
-			}
-			else if(hostRem)
-			{
-				for(let instanceRem of await hostRem.taggedRem())
-				{
-					await addSlotsFromPartialPortal(instanceRem,slotPortal);
-
-				}
-			}
-		}
-		return automateDetector;
-	}
+	const utils=useUtil(plugin);
 
 
 
-	const isValidPartialPointer=async (pointer:Rem)=>{
-		let p=(await pointer.remsBeingReferenced())[0];
-		if(!p)return false;
-		let projectRem=await p.getParentRem();
-		return (await projectRem?.hasPowerup(PARTIAL_PW_CODE));
-	}
-
-	const isValidPointerRem=async (pointer:Rem)=>{
-		return await pointer.hasPowerup(POINTER_PW_CODE);
-	}
-
-	const getValidPartialInPortal=async (parentRem:Rem|undefined)=>{
-		if(!parentRem)return false;
-		let children=await parentRem.getChildrenRem();
-		for(let child of children)
-		{
-			if((await child.getType())===RemType.PORTAL)
-			{
-				let mayBeSlots=await Promise.all((await child.getPortalDirectlyIncludedRem()).map(async (re)=>await plugin.rem.findOne(re._id)));
-				let slots_Parent=await mayBeSlots[0]?.getParentRem()
-				if(mayBeSlots.length&&await slots_Parent?.hasPowerup(PARTIAL_PW_CODE))
-				{
-					return mayBeSlots;
-				}
-			}
-
-		}
-
-		return null;
-	}
-
+	/*utilities functions for `##~Pointer`*/
+	//region
 	async function usePointer(pointer:Rem,pointFrom:Rem,pointTo:Rem){
 		await pointFrom.setText(await replaceTextObj(pointFrom.text));
 		if(pointFrom.backText)
@@ -129,9 +50,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 			return await plugin.richText.replaceAllRichText(textObj,await plugin.richText.rem(pointer).value(),await plugin.richText.rem(pointTo).value())
 		}
 	}
-
-	const usePointerBatchFor=async (remAsPointer:Rem)=>
-	{
+	const usePointerBatchFor=async (remAsPointer:Rem)=>{
 		let pointTo=(await remAsPointer.remsBeingReferenced())[0];
 		let pointFrom=await remAsPointer.remsReferencingThis();
 		pointFrom.forEach((p)=>{
@@ -139,40 +58,122 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 		})
 	}
 
-
-
-	const addSlotsFromPartialPortal=async (hostRem:Rem|undefined,slotPortal:Rem|undefined)=>  {
-		let slots=await slotPortal?.getPortalDirectlyIncludedRem();
-		if(slots)
-			slots=await plugin.rem.findMany(slots.map(slot=>slot._id));
-
-		if(hostRem&&slots)
-			await Promise.all(slots?.map(async (slot)=>{
-				if((await slot.hasPowerup(PARTIAL_PW_CODE)))return;
-				let newRem=await plugin.rem.createRem();
-				await newRem?.setText(await plugin.richText.rem(slot).value())
-				await newRem?.setParent(hostRem);
-			}))
+	const isValidPointerRem=async (pointer:Rem)=>{
+		return await pointer.hasPowerup(POINTER_PW_CODE);
 	}
-	//get "remote slots"(A parent has children whose type is portal and the portal contains the "remote slot")
-	const getSlotPortal=async (remAsClass:Rem)=>{
-		let children=await remAsClass.getChildrenRem();
-		return (await Promise.all(children.map(async (child)=>{
-			return (await child.getType())===RemType.PORTAL&&(await child.hasPowerup(PARTIAL_SLOT))? child :undefined
-		}))).flat(1).filter(t=>t);
-	}
-
-//Attain the BaseClass Rems the 'rem' has inherited from('rem' has reference to its BaseClass rem)
-	const getInherited = async (rem:Rem|undefined)=>{
-		let refs=await rem?.remsBeingReferenced();
-		return new Map(refs?.map(t=>[t._id,t]))
-
-	}
+	//endregion
 
 	//Work as a lock to prevent dirty write to the database
-	const remsReferencedAlready=new Set();
+	const tuner=new RemCreateSynchronizer();
 
-	let partialHandle=async (remPartial:any,PartialHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
+	//Handlers
+	//region
+	const partialHandle=async (remPartial:any,partialRecorder:EventListenerRecorder)=>{
+
+		/*utilities functions for `##~Partial`*/
+		//region
+		async function addPortal2 (parentRem:Rem,portalContent:Rem[]){
+			let portal=await plugin.rem.createPortal();
+			if(portal)
+				portalContent.forEach(content=>{
+					if(portal)
+						content.addToPortal(portal);
+				})
+			await portal?.setParent(parentRem);
+			return portal
+		}
+		const addAutomateSlotPointer=(RefOfSlot:Rem)=>{
+			async function AutomateSlotPointer(){
+				if((!(await isValidPartialPointer(RefOfSlot)))&&(!(await isValidPointerRem(RefOfSlot))))
+				{
+					partialRecorder.removeOneListener(RefOfSlot._id)
+					return;
+				}
+				await usePointerBatchFor(RefOfSlot);
+			}
+			return AutomateSlotPointer
+		}
+		const addAutomateSlotLoader= (hostRem:string|Rem|undefined,slotPortal:Rem|undefined)=>{
+
+			// plugin.app.toast("SlotLoader Ready!");
+			async function automateDetector()
+			{
+				// await plugin.app.toast("SlotLoader Start!")
+				if(!hostRem)return;
+				if(typeof hostRem==="string")
+				{
+					hostRem=await plugin.rem.findOne(hostRem);
+				}
+				// await plugin.app.toast("SlotLoader Effected:"+hostRem?.text.toString())
+				// console.warn("SlotLoader Effected:"+hostRem)
+				let slots=await getValidPartialInPortal(hostRem);
+				if(hostRem&&!slots)
+				{
+					partialRecorder.removeOneListener(hostRem._id)
+				}
+				else if(hostRem)
+				{
+					for(let instanceRem of await hostRem.taggedRem())
+					{
+						await addSlotsFromPartialPortal(instanceRem,slotPortal);
+
+					}
+				}
+			}
+			return automateDetector;
+		}
+
+		const isValidPartialPointer=async (pointer:Rem)=>{
+			let p=(await pointer.remsBeingReferenced())[0];
+			if(!p)return false;
+			let projectRem=await p.getParentRem();
+			return (await projectRem?.hasPowerup(PARTIAL_PW_CODE));
+		}
+		const getValidPartialInPortal=async (parentRem:Rem|undefined)=>{
+			if(!parentRem)return false;
+			let children=await parentRem.getChildrenRem();
+			for(let child of children)
+			{
+				if((await child.getType())===RemType.PORTAL)
+				{
+					let mayBeSlots=await Promise.all((await child.getPortalDirectlyIncludedRem()).map(async (re)=>await plugin.rem.findOne(re._id)));
+					let slots_Parent=await mayBeSlots[0]?.getParentRem()
+					if(mayBeSlots.length&&await slots_Parent?.hasPowerup(PARTIAL_PW_CODE))
+					{
+						return mayBeSlots;
+					}
+				}
+
+			}
+
+			return null;
+		}
+		const addSlotsFromPartialPortal=async (hostRem:Rem|undefined,slotPortal:Rem|undefined)=>  {
+			let slots=await slotPortal?.getPortalDirectlyIncludedRem();
+			if(slots)
+				slots=await plugin.rem.findMany(slots.map(slot=>slot._id));
+
+			if(hostRem&&slots)
+				await Promise.all(slots?.map(async (slot)=>{
+					if((await slot.hasPowerup(PARTIAL_PW_CODE)))return;
+					await utils.addNewRefRem(hostRem,slot)
+				}))
+		}
+		//get "remote slots"(A parent has children whose type is portal and the portal contains the "remote slot")
+		const getSlotPortal=async (remAsClass:Rem)=>{
+			let children=await remAsClass.getChildrenRem();
+			return (await Promise.all(children.map(async (child)=>{
+				return (await child.getType())===RemType.PORTAL&&(await child.hasPowerup(PARTIAL_SLOT))? child :undefined
+			}))).flat(1).filter(t=>t);
+		}
+		//Attain the BaseClass Rems the 'rem' has inherited from('rem' has reference to its BaseClass rem)
+		const getInherited = async (rem:Rem|undefined)=>{
+			let refs=await rem?.remsBeingReferenced();
+			return new Map(refs?.map(t=>[t._id,t]))
+
+		}
+		//endregion
+
 		let targets=await getInherited(remPartial);
 		let target:Rem|undefined,targetId:string|undefined;
 		if(refOrPortal===USE_PORTAL)
@@ -202,15 +203,13 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 					slotPortal=portal;
 				}
 
-				PartialHandlerRecord.current.add(targetId);
-				if(!PartialHandlerRecord.prev.has(targetId)) {
+				partialRecorder.signInListenerInReason(targetId);
+				if(!partialRecorder.findListened(targetId)) {
 					let handle = await addAutomateSlotLoader(target, slotPortal)
-					await handle();
-					PartialHandlerRecord.prev.set(targetId, handle)
-					plugin.event.addListener(AppEvents.RemChanged, target._id, handle)
+					await partialRecorder.addNewListener(targetId,handle);
 				}
 			}
-			updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle))
+			partialRecorder.removeRedundantListeners()
 			
 		}
 		else 
@@ -222,85 +221,81 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 				if(childrenRemPartial&&(await childrenRemPartial).length&&target)
 					for(let child of childrenRemPartial)
 					{
+						const semaphoreId='partial_'+child._id+targetId
 						let newRem=undefined;
-						// let needs2unlock=false;
 						for(let rr of await child.remsReferencingThis())
 						{
-							if(rr.parent===target?._id)
+							//for rems whose slot pointer has already created.
+							if((await rr.getParentRem())._id===target?._id)
 							{
 								newRem=rr;
-								PartialHandlerRecord.current.add(newRem?._id);
+								if(newRem._id)
+								partialRecorder.signInListenerInReason(newRem._id)
 								// New rem has been written to database correctly, clear the lock!
-								remsReferencedAlready.delete(child._id+targetId);
+								tuner.removeLock(semaphoreId);
 							}
 						}
 						//To avoid conflict with `~Rewrite`
 						if(!await child.isSlot()||await child.hasPowerup(REWRITE_PW_CODE))continue;
-						//if(await child.hasPowerup(REWRITE_PW_CODE))continue;
 
-						if(!newRem&&!remsReferencedAlready.has(child._id+targetId))
+						//for rems whose slot pointer hasn't created yet
+						if(!newRem&&!tuner.ifLocked(semaphoreId))
 						{
 							//add the lock when new rem beginning to create
 							console.log(child.text+":"+child._id+">>"+targetId+":"+target?.text);
-							remsReferencedAlready.add(child._id+targetId);
-							PartialHandlerRecord.current.add(newRem?._id);
-							newRem=await plugin.rem.createRem();
-							await newRem?.setText(await plugin.richText.rem(child).value());
-							await newRem?.setParent(target);
+							tuner.createLock(semaphoreId);
+							partialRecorder.signInListenerInReason(newRem?._id);
+							newRem=await utils.addNewRefRem(target,child);
 							await newRem?.setIsSlot(true);
 						}
-						if(newRem&&!PartialHandlerRecord.prev.has(newRem?._id))
+						if(newRem&&!partialRecorder.findListened(newRem?._id))
 						{
 							let handle=addAutomateSlotPointer(newRem)
-							await handle();
-							PartialHandlerRecord.prev.set(newRem._id,handle);
-							plugin.event.addListener(AppEvents.RemChanged,newRem._id,handle)
+							await partialRecorder.addNewListener(newRem._id,handle)
 						}
-						PartialHandlerRecord.current.add(newRem?._id);
+						partialRecorder.signInListenerInReason(newRem?._id)
 					}
-				updateELRecord(PartialHandlerRecord,(remId:string,handle:any)=>plugin.event.removeListener(AppEvents.RemChanged,remId,handle));
-				
+				partialRecorder.removeRedundantListeners();
+
 			}
 		}
-
-		PartialHandlerRecord.current= new Set();
+		partialRecorder.flushListenersInReason();
 	}
-	const pointerHandle=async (remAsPointer:any,pointerHandlerRecord:{prev:Map<any, any>,current:Set<any>})=>{
+
+	const pointerHandle=async (remAsPointer:any)=>{
 		await usePointerBatchFor(remAsPointer);
 
 	}
-
 
 	const instanceHandle = () => {
 
 	}
 
-
 	const extendingHandle = () => {
 
 	}
 
-	const rewritingHandle= async (rewriterRem:Rem,handlerRecord:{prev:Map<any, any>,current:Set<any>}) =>{
-		
-		
-		
-		let rewriteeRemsCandidates=await rewriterRem.remsBeingReferenced();
-		for(let r of rewriteeRemsCandidates)
+	//the rewriter rem is a child rem, one of whose ancestors has a "##prototype" and the rewriter rem has referred to one of the "prototype's" descendants
+	const rewritingHandle= async (rewriterRem:Rem) =>{
+
+		let rewrittenRemsCandidates=await rewriterRem.remsBeingReferenced();
+		for(let r of rewrittenRemsCandidates)
 		{
-			let pq=await findInherite(rewriterRem,r);
+			let pq=await findInherit(rewriterRem,r);
 			if(pq)
 			{
-				let rewriteeHandler=((k:Rem,rerOwner:Rem,clanTreeDepth:number)=>{
+				let rewrittenHandler=((k:Rem,rerOwner:Rem,clanTreeDepth:number)=>{
 					let clanTreeIndex=clanTreeDepth+1;
 					return async ()=>{
 						if(!await rewriterRem.hasPowerup(REWRITE_PW_CODE))
 						{
-							plugin.event.removeListener(AppEvents.RemChanged,k._id,rewriteeHandler);
+							plugin.event.removeListener(AppEvents.RemChanged,k._id,rewrittenHandler);
 							return;
 						}
 						let candidates=await k.remsReferencingThis()
 						for(let candidate of candidates)
 						{
+							//Candidates themselves cannot be rewriter rems or dead loops will occur.
 							if(!await candidate.hasPowerup(REWRITE_PW_CODE))
 							{
 								let parent=await candidate.getParentRem();
@@ -318,50 +313,31 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 								}
 							}
 							clanTreeIndex=clanTreeDepth;
-							
 						}
 						
 					}
 				})(r,pq[0],pq[2]);
-				plugin.event.addListener(AppEvents.RemChanged,r._id,rewriteeHandler);
+				plugin.event.addListener(AppEvents.RemChanged,r._id,rewrittenHandler);
 				
 			}
 			
 		}
 		
 
-		// async function getRewriterOwner(rewriterRem:Rem,rewriteeRem:Rem) {
-		// 	let p=await rewriterRem.getParentRem();
-		// 	let qid=rewriteeRem.parent;
-		// 	if(p&&qid)
-		// 	{
-		// 		let pps=await p.remsBeingReferenced();
-		// 		pps=pps.concat(await p.ancestorTagRem())
-		// 		for(const pp of pps)
-		// 		{
-		// 			if(pp._id===qid&&!await pp.isPowerup())
-		// 			{
-		// 				let q=plugin.rem.findOne(qid);
-		// 				return [p,q];
-		// 			}
-		// 		}
-		// 	}
 
-		// 	return null
-		// }
 		
 		
-		async function findInherite(rewriter:Rem,rewritee:Rem):Promise<[Rem,Rem,number]|null>
+		async function findInherit(rewriter:Rem,rewritten:Rem):Promise<[Rem,Rem,number]|null>
 		{
 			let p:Rem|undefined=rewriter;
-			let q:Rem|undefined=rewritee;
-			let protecterlock=256;
+			let q:Rem|undefined=rewritten;
+			let protectorLock=256;
 			let i=0;
 			let chainIsIntact=true;
-			while(p&&q&&i<=protecterlock&&chainIsIntact)
+			while(p&&q&&i<=protectorLock&&chainIsIntact)
 			{
-				let classtags=await p.getTagRems();
-				for(let t of classtags)
+				let classTags=await p.getTagRems();
+				for(let t of classTags)
 				{
 					if(t._id===q._id)
 					return [p,q,i+1];
@@ -372,15 +348,17 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 				for(let s of ss)
 				{
 					if(s._id===q._id)
+					{
 						flag=true;
-					break;
+						break;
+					}
 				}
 				chainIsIntact=flag;
 				p=await p.getParentRem();
 				q=await q.getParentRem();
 				i++;
 			}
-			if(i>protecterlock)
+			if(i>protectorLock)
 			{
 				console.error("Oops,Is there a parentship loop?")
 			}
@@ -388,6 +366,114 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 		}
 
 	}
+
+	const mountHandle=async (mountLoad:Rem,mountPointRecorder:EventListenerRecorder)=>{
+		const mountCreateSemaphoreId=(rId:string|null|undefined)=>{
+
+			return `mount_${rId}_${mountLoad._id}`
+		}
+
+
+
+		const getRemsToSettleMountPoint=async ()=>{
+			return mountLoad?.remsBeingReferenced();
+		}
+		const getMountHostsStillBeAssigned=async ()=>{
+			if(!await mountLoad.hasPowerup(MOUNT_PW_CODE))return null;
+			const currentMPHosts=await getRemsToSettleMountPoint();
+			if(!currentMPHosts)return null;
+			return new Map(currentMPHosts.map(r=>[r._id,r]));
+		}
+
+		//MP stands for "mount point"
+		const whetherMPStillAssignedToHost=async (mountHostId:string)=>{
+			const map=await getMountHostsStillBeAssigned();
+			return map&&map.has(mountHostId);
+		}
+
+
+		const addMountPoint=async (mountedHost:Rem)=>{
+			return await utils.addNewRefRem(mountedHost,mountLoad);
+		}
+
+		//Add listeners to existing mount points
+		//region
+		const map4MountedHosts=mountPointRecorder.RemsHaveBeenListenedTo();
+
+		const candidates2AddListener=new Map((await mountLoad.remsReferencingThis()).map(r=>[r._id,r]));
+		const mapCurrentMP=await getMountHostsStillBeAssigned();
+		const useMountingRemHandler=async (mountPoint:Rem,mLoad:Rem)=>{
+			return async ()=>{
+				if(!mountPoint||!(await mountPoint.getParentRem())?._id)
+				{
+					mountPointRecorder.removeOneListener(mountPoint._id);
+					return;
+				}
+				const mountL=(await mountPoint.remsBeingReferenced())[0]
+				const pp=(await mountPoint.getParentRem())?._id
+				if(pp)
+				tuner.removeLock(mountCreateSemaphoreId(pp));
+				if(pp&&!await whetherMPStillAssignedToHost(pp)||!mountL||mountL._id!==mLoad._id)
+				{
+					mountPointRecorder.removeOneListener(mountPoint._id);
+				}
+				else
+				{
+					await usePointerBatchFor(mountPoint);
+				}
+			}
+		}
+		if(mapCurrentMP)
+		{
+
+			console.log('mapCurrentMP:',mapCurrentMP)
+			console.log('candidates2Listen:',candidates2AddListener)
+			for(const [rId,candidate] of candidates2AddListener.entries())
+			{
+				let cp=(await candidate.getParentRem())?._id
+
+				const semaphoreId=mountCreateSemaphoreId(cp)
+				//for mount points that have been existing
+				if(cp&&mapCurrentMP.has(cp))
+				{
+					//and haven't added listeners yet
+					if(!mountPointRecorder.findListened(candidate._id))
+						await mountPointRecorder.addNewListener(candidate._id,await useMountingRemHandler(candidate,mountLoad))
+					mountPointRecorder.signInListenerInReason(candidate._id)
+
+					mapCurrentMP.delete(cp)
+				}
+				tuner.removeLock(semaphoreId);
+
+			}
+
+
+			//Add mount points to mount hosts in need
+			for(const [rId,hostRem] of mapCurrentMP)
+			{
+
+				const semaphoreId=mountCreateSemaphoreId(hostRem._id);
+				if(!candidates2AddListener.size)
+				{
+					tuner.removeLock(semaphoreId);
+				}
+				if(!tuner.ifLocked(semaphoreId))
+				{
+							tuner.createLock(semaphoreId)
+							const mountPoint=await addMountPoint(hostRem);
+							const mountingRemHandler=await useMountingRemHandler(mountPoint,mountLoad)
+							await mountPointRecorder.addNewListener(mountPoint._id,mountingRemHandler)
+							// await mountPoint.setIsSlot(true);
+				}
+			}
+		}
+
+		//endregion
+
+
+	}
+	//endregion
+
 
 	let obj:JSObject={
 		// TS engine would be confused by the key:  plaintext or a variable name?
@@ -400,6 +486,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 	obj[INSTANCE_PW_CODE]=instanceHandle;
 	obj[EXTEND_PW_CODE]=extendingHandle;
 	obj[REWRITE_PW_CODE]=rewritingHandle;
+	obj[MOUNT_PW_CODE]=mountHandle;
 	return obj
 }
 

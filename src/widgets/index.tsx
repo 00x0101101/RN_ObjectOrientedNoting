@@ -1,28 +1,22 @@
 import {
-	AppEvents,
 	declareIndexPlugin,
 	ReactRNPlugin,
-	Rem,
 } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
+import { useInitializer } from './Initializer';
+import { useUtil } from './Utilities';
+import  './consts';
+import {
+	combinationList,
+	EXTEND_PW_CODE,
+	inheritList,
+	INSTANCE_PW_CODE, MOUNT_PW_CODE, OBJECT_PW_CODE,
+	PARTIAL_PW_CODE, PARTIAL_SLOT,
+	POINTER_PW_CODE, pwList,
+	REWRITE_PW_CODE, SLOT_OBJ_IS,
+} from './consts';
 
-
-
-import {  useHandlers } from './Handlers';
-
-export const REWRITE_PW_CODE:string="Override"
-export const PARTIAL_PW_CODE:string="Partial"
-export const POINTER_PW_CODE:string="Pointer"
-export const INSTANCE_PW_CODE:string="Instance"
-export const EXTEND_PW_CODE:string="Extending"
-export const OBJECT_PW_CODE:string="O_O_N_"
-export const SLOT_OBJ_IS = "ObjIs"
-
-export const PARTIAL_SLOT=OBJECT_PW_CODE+"slot"
-
-
-export const pwList=[PARTIAL_PW_CODE,POINTER_PW_CODE,INSTANCE_PW_CODE,EXTEND_PW_CODE,REWRITE_PW_CODE]
 
 
 
@@ -38,7 +32,13 @@ export const pwList=[PARTIAL_PW_CODE,POINTER_PW_CODE,INSTANCE_PW_CODE,EXTEND_PW_
 
 
 async function onActivate(plugin: ReactRNPlugin) {
-	let handlers=useHandlers(plugin)
+
+	const initializer=useInitializer(plugin)
+	const cmdUtils=useUtil(plugin)
+
+	const clearOONOf=cmdUtils.clearOONOf;
+	const mkPointer2This=cmdUtils.mkPointer2This;
+
 
 	//register PowerUps
 	//region
@@ -58,11 +58,16 @@ async function onActivate(plugin: ReactRNPlugin) {
 			}
 	);
 
-	// await plugin.app.registerPowerup('~Rewrite',
-	// 	REWRITE_PW_CODE,
-	// 	"To Tag rems where the preserved word 'override' effects",
-	// 	{slots:[]
-	// 	})
+	await plugin.app.registerPowerup(
+		'~Mount',
+		MOUNT_PW_CODE,
+		"To Tag rems which is to be a 'mount load' on other rems. Making rems this rem referring to having a pointer to this rem.\n" +
+		"Another way to implement ~Partial, inspired by `Mount Point` in Linux and `Callback` in C++",
+		{slots:[]
+		}
+	);
+
+
 
 	await plugin.app.registerPowerup(
 		'~PartialSlot',
@@ -79,9 +84,10 @@ async function onActivate(plugin: ReactRNPlugin) {
 		})
 	await plugin.app.registerPowerup('~Extending',
 		EXTEND_PW_CODE,
-		"To tag a rem as a `class extend` ",
-		{slots:[]
-		})
+		'To tag a rem as a `class extend` ',
+		{
+			slots: [],
+		});
 
 	await plugin.app.registerPowerup('~Instance',
 		INSTANCE_PW_CODE,
@@ -91,7 +97,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 	
 	await plugin.app.registerPowerup('~Rewrite',
 		REWRITE_PW_CODE,
-		"Implementation of polymorphism, enable derived rems  ",
+		"To Tag rems where the preserved word 'override' effects. (Implementation of polymorphism, enable derived rems)",
 		{slots:[]
 		})
 		//endregion
@@ -105,17 +111,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 		quickCode:'oon',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
-			await hostRem?.setPowerupProperty(OBJECT_PW_CODE,SLOT_OBJ_IS,[])
-			await hostRem?.removePowerup(OBJECT_PW_CODE);
-			for (let pwCode of pwList)
-			{
-				let pw2Remove=pwCode;
-				if(await hostRem?.hasPowerup(pw2Remove))
-				{
-					await hostRem?.removePowerup(pw2Remove)
-
-				}
-			}
+			await clearOONOf(hostRem,null);
 		},
 	});
 
@@ -127,6 +123,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 		quickCode:'OIns',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
+			await clearOONOf(hostRem,inheritList);
 			hostRem?.addPowerup(INSTANCE_PW_CODE);
 			
 		},
@@ -138,8 +135,8 @@ async function onActivate(plugin: ReactRNPlugin) {
 		quickCode:'OExt',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
+			await clearOONOf(hostRem,inheritList);
 			hostRem?.addPowerup(EXTEND_PW_CODE);
-			
 		},
 	});
 
@@ -161,6 +158,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 		quickCode:'OPrl',
 		action: async () => {
 			let hostRem=await plugin.focus.getFocusedRem();
+			await clearOONOf(hostRem,combinationList);
 			hostRem?.addPowerup(PARTIAL_PW_CODE);
 
 		},
@@ -177,98 +175,28 @@ async function onActivate(plugin: ReactRNPlugin) {
 
 		},
 	});
+
+	await plugin.app.registerCommand({
+		id: 'AsMount',
+		name: "Tag with '~Mount'",
+		description:"Making rems this rem referring to having a pointer to this rem.\nAnother way to implement ~Partial, inspired by `Mount Point` in Linux and `Callback` in C++",
+		quickCode:'OMnt',
+		action: async () => {
+			let hostRem=await plugin.focus.getFocusedRem();
+			await clearOONOf(hostRem,combinationList);
+			hostRem?.addPowerup(MOUNT_PW_CODE);
+
+		},
+	});
+
+
 	//endregion
 
 
-
-	const AddAutomateObNHandler= (r:Rem|undefined,ObjTagCode:string)=>
-	{
-		let HandlerRecord={
-			prev:new Map(),
-			current:new Set()
-		}
-		let handler=handlers[ObjTagCode];
-		let AutomateObNHandler=async (event:any)=>{
-			let state=await r?.hasPowerup(ObjTagCode)
-			if(!state)
-			{
-				plugin.event.removeListener(AppEvents.RemChanged,r?._id,AutomateObNHandler)
-			}
-			else
-			{
-				handler(r,HandlerRecord);
-			}
-
-		}
-		return AutomateObNHandler
-	}
-
-	//the process will return a function in closure watching over all the rems tagged with power-up rems from OON
-	const getObjectNotingProcess= async (ObjPowerUpCode:string)=>{
-		let ObjPowerUp=await plugin.powerup.getPowerupByCode(ObjPowerUpCode)
-		let ListenerRecord={
-			prev:new Map(),
-			current:new Set()
-		};
-
-
-		//Triggered when Obj PowerUp has been changed(due to some rem has been tag with this),
-		//all changes to the rem tagged by the PowerUp whose code is "ObjPowerUpCode" will trigger the event listener
-		//the callback of the event listener can auto-terminate themselves after corresponding PowerUp tags were removed
-		return async ()=>{
-			let remsOONed=await ObjPowerUp?.taggedRem();
-			if(remsOONed&&(await remsOONed).length)
-			{
-				for(let taggedWithOON of remsOONed)
-				{
-
-					if(!ListenerRecord.prev.has(taggedWithOON._id))
-					{
-						let handle=AddAutomateObNHandler(taggedWithOON,ObjPowerUpCode)
-						await handle(null);
-						plugin.event.addListener(AppEvents.RemChanged,taggedWithOON._id,handle)
-						ListenerRecord.prev.set(taggedWithOON._id,handle);
-						if(ObjPowerUp)
-						{
-							await taggedWithOON.addPowerup(OBJECT_PW_CODE);
-							await taggedWithOON.setPowerupProperty(OBJECT_PW_CODE,SLOT_OBJ_IS,await plugin.richText.rem(ObjPowerUp).value())
-						}
-					}
-					ListenerRecord.current.add(taggedWithOON._id);
-				}
-				ListenerRecord.prev.forEach((r,i,map)=>{
-					if(!ListenerRecord.current.has(i))
-					{
-						plugin.event.removeListener(AppEvents.RemChanged,i,r)
-						map.delete(i);
-					}
-
-				})
-			}
-			ListenerRecord.current=new Set();
-		}
-	}
-
-
-
- const initalizePowerUp=async (pwCode:string) => {
-		let pwRem=await plugin.powerup.getPowerupByCode(pwCode);
-		if(pwRem)
-		{
-			//find powerUp rem itself and attach event listener to it
-			let pwHandle=await getObjectNotingProcess(pwCode);
-			await pwHandle();
-			plugin.event.addListener(AppEvents.RemChanged,pwRem?._id,pwHandle)
-		}
- }
 for(const pwCode of pwList)
 {
-	await initalizePowerUp(pwCode);
+	await initializer.initializePowerUp(pwCode);
 }
- 
- 
- 
-
 	
 }
 

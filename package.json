@@ -11,12 +11,14 @@
   "dependencies": {
     "@remnote/plugin-sdk": "^0.0.14",
     "clsx": "^1.2.1",
+    "lodash": "^4.17.21",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "remeda": "^1.1.0"
   },
   "devDependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
+    "@types/lodash": "^4.14.191",
     "@types/node": "^18.0.3",
     "@types/react": "^17.0.2",
     "@types/react-dom": "^17.0.2",

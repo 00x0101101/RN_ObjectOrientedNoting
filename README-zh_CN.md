@@ -210,7 +210,7 @@ public partial class Form1 : Form
     Fruit<|--Banana
 ```
 
-- 当一个Rem被标记为 `~Rewrite`时,它会找到所有它需要去覆写的Rem (被覆写者是被 `~Rewrite`标记的Rem所引用的其他Rem) 和 "所有者rem"(指出具体类名 ——`Apple`,`Banana` 或者 `Fruit`). 下面的例子中,覆写者的所有者是 `Apple` 和 `Banana`  而被覆写者的所有者是 `Fruit`.
+- 当一个Rem被标记为 `~Rewrite`时,它会找到所有它需要去覆写的Rem (被覆写者是被 `~Rewrite`标记的Rem所引用的其他Rem) 和 "所有者rem"(指具体类名 ——`Apple`,`Banana` 或者 `Fruit`). 下面的例子中,覆写者的所有者是 `Apple` 和 `Banana`  而被覆写者的所有者是 `Fruit`.
 
 ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/RewriterTemplate.png)
 
@@ -219,6 +219,32 @@ public partial class Form1 : Form
 
 ![](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UseRewrite.gif)
 
+
+
+## 另一种解决“组合问题”的方法：挂载（`~Mount`）
+
+###  `~Partial` 和 `~Mount` 的区别
+- 不像 `~Partial` 会把一些指向被`~Partial`标记的Rem所拥有的slot变成隐式`~Pointer`指针， `~Mount`会在该场景下把指向被标记的Rem本身的引用变为隐式`~Pointer`指针。
+
+![UsageOfMount](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UsageOfMount.png)
+
+### 适用于 `~Mount` 的场景
+
+- 或许 `~Partial` 是解决“组合问题”的一种手段, 但在被`~Partial` 标记的rem下面有很多的slot时，`~Partial`所标记的Rem的服务对象（宿主Rem）会变成一团难视的乱麻，因为会有很多作为隐式`~Pointer`指针存在的指向slot的引用会和宿主Rem下面原有的内容混合在一起.
+
+![`Partial`RemWithLotsOfSlots](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/`Partial`RemWithLotsOfSlots.png)
+
+![DazingAmountOfSlotRefsInHostRem](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/DazingAmountOfSlotRefs.png)
+
+- 如果你不需要让这些slots的内容在宿主Rem下作为提醒而显示出来，或许把这些指向slot的隐式`~Pointer`指针替换为指向被`~Partial`标记的Rem自身的隐式`~Pointer`
+而不是将所有slot的内容塞进宿主Rem下面。这种想法似乎像一个设备把自己挂在在主操作系统下，并像用户和主操作系统提供访问权限，而指向被`~Partial`Rem标记的隐式`~Pointer`就好像所谓的“挂载点”
+
+- 这也是`~Mount`出现的原因，当一个Rem被`~Mount`标记而不是被`~Partial`标记时,乱到让人掉SAN的指向slot的隐式`~Pointer`就会被一个指向slot的所有者（被`~Mount`标记的Rem）代替。非常的简单，非常的清爽。
+
+- 不像在使用`~Partial`的情况出现指向slot的`~Pointer`，`~Mount`标记的Rem的引用变成了隐式的`~Pointer`,这些隐式`~Pointer`会将指向这些隐式`~指针`（即挂载点）的引用
+  变成对这些`~指针`指向的被 `~Mount`标记的Rem的引用, 此时就可以直接在被`~Mount`标记的Rem自身上使用RN原有的"模板-slot"系统.
+
+![SlotPtrReplacedByOneMountPoint](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/SlotPtrReplacedByOneMountPoint.png)
 
 
 
