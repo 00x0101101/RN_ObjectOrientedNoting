@@ -242,7 +242,7 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 						if(!newRem&&!tuner.ifLocked(semaphoreId))
 						{
 							//add the lock when new rem beginning to create
-							console.log(child.text+":"+child._id+">>"+targetId+":"+target?.text);
+							// console.log(child.text+":"+child._id+">>"+targetId+":"+target?.text);
 							tuner.createLock(semaphoreId);
 							partialRecorder.signInListenerInReason(newRem?._id);
 							newRem=await utils.addNewRefRem(target,child);
@@ -398,7 +398,6 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 
 		//Add listeners to existing mount points
 		//region
-		const map4MountedHosts=mountPointRecorder.RemsHaveBeenListenedTo();
 
 		const candidates2AddListener=new Map((await mountLoad.remsReferencingThis()).map(r=>[r._id,r]));
 		const mapCurrentMP=await getMountHostsStillBeAssigned();
@@ -411,11 +410,11 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 				}
 				const mountL=(await mountPoint.remsBeingReferenced())[0]
 				const pp=(await mountPoint.getParentRem())?._id
-				if(pp)
-				tuner.removeLock(mountCreateSemaphoreId(pp));
+
 				if(pp&&!await whetherMPStillAssignedToHost(pp)||!mountL||mountL._id!==mLoad._id)
 				{
 					mountPointRecorder.removeOneListener(mountPoint._id);
+					tuner.removeLock(mountCreateSemaphoreId(pp));
 				}
 				else
 				{
@@ -426,20 +425,20 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 		if(mapCurrentMP)
 		{
 
-			console.log('mapCurrentMP:',mapCurrentMP)
-			console.log('candidates2Listen:',candidates2AddListener)
-			for(const [rId,candidate] of candidates2AddListener.entries())
+			// console.log('mapCurrentMP:',mapCurrentMP)
+			// console.log('candidates2Listen:',candidates2AddListener)
+			for(const [rId,MPCandidate] of candidates2AddListener.entries())
 			{
-				let cp=(await candidate.getParentRem())?._id
+				let cp=(await MPCandidate.getParentRem())?._id
 
 				const semaphoreId=mountCreateSemaphoreId(cp)
 				//for mount points that have been existing
 				if(cp&&mapCurrentMP.has(cp))
 				{
 					//and haven't added listeners yet
-					if(!mountPointRecorder.findListened(candidate._id))
-						await mountPointRecorder.addNewListener(candidate._id,await useMountingRemHandler(candidate,mountLoad))
-					mountPointRecorder.signInListenerInReason(candidate._id)
+					if(!mountPointRecorder.findListened(MPCandidate._id))
+						await mountPointRecorder.addNewListener(MPCandidate._id,await useMountingRemHandler(MPCandidate,mountLoad))
+					mountPointRecorder.signInListenerInReason(MPCandidate._id)
 
 					mapCurrentMP.delete(cp)
 				}
@@ -453,17 +452,16 @@ export const useHandlers=(plugin:ReactRNPlugin)=>{
 			{
 
 				const semaphoreId=mountCreateSemaphoreId(hostRem._id);
-				if(!candidates2AddListener.size)
-				{
-					tuner.removeLock(semaphoreId);
-				}
+				// if(!candidates2AddListener.size)
+				// {
+				// 	tuner.removeLock(semaphoreId);
+				// }
 				if(!tuner.ifLocked(semaphoreId))
 				{
 							tuner.createLock(semaphoreId)
 							const mountPoint=await addMountPoint(hostRem);
 							const mountingRemHandler=await useMountingRemHandler(mountPoint,mountLoad)
 							await mountPointRecorder.addNewListener(mountPoint._id,mountingRemHandler)
-							// await mountPoint.setIsSlot(true);
 				}
 			}
 		}
