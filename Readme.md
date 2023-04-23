@@ -241,7 +241,7 @@ During RemNote's start or the rem tagged with `~Partial` (`New content added to 
 ### Difference between `~Partial` and `~Mount`
 - Unlike `~Partial` making some references to the tagged rem's slots be an implicit `~Pointer`, `~Mount` makes some reference to the tagged rem itself be a `~Pointer` rem when put to use in similar cases.
 
-![UsageOfMount](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UsageOfMount.png)
+![UsageOfMount](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UsageOfMount.gif)
 
 ### The cases suitable for `~Mount`
 

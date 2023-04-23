@@ -226,7 +226,7 @@ public partial class Form1 : Form
 ###  `~Partial` 和 `~Mount` 的区别
 - 不像 `~Partial` 会把一些指向被`~Partial`标记的Rem所拥有的slot变成隐式`~Pointer`指针， `~Mount`会在该场景下把指向被标记的Rem本身的引用变为隐式`~Pointer`指针。
 
-![UsageOfMount](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UsageOfMount.png)
+![UsageOfMount](https://raw.githubusercontent.com/00x0101101/RN_ObjectOrientedNoting/main/public/tutorials/UsageOfMount.gif)
 
 ### 适用于 `~Mount` 的场景
 
